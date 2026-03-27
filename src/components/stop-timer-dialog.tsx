@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 
 import { useTimer } from "@/components/timer-context"
+import type { TimeEntry } from "@/lib/time-entries"
 import {
   stopTimer,
   formatElapsedTime,
@@ -28,6 +29,7 @@ import {
 } from "@/lib/time-entries"
 
 interface StopTimerDialogProps {
+  timer: TimeEntry | null
   open: boolean
   onOpenChange: (open: boolean) => void
   onStopped?: () => void
@@ -37,11 +39,12 @@ const EIGHT_HOURS_SECONDS = 8 * 60 * 60
 const THIRTY_SECONDS = 30
 
 export function StopTimerDialog({
+  timer,
   open,
   onOpenChange,
   onStopped,
 }: StopTimerDialogProps) {
-  const { activeTimer, elapsedSeconds, setActiveTimer, notifyTimerStopped } = useTimer()
+  const { elapsedSecondsMap, removeActiveTimer, notifyTimerStopped } = useTimer()
   const [description, setDescription] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -52,20 +55,21 @@ export function StopTimerDialog({
     }
   }, [open])
 
-  if (!activeTimer) return null
+  if (!timer) return null
 
+  const elapsedSeconds = elapsedSecondsMap[timer.id] ?? 0
   const billableMinutes = roundToBillableMinutes(elapsedSeconds)
   const isLongSession = elapsedSeconds > EIGHT_HOURS_SECONDS
   const isShortSession = elapsedSeconds < THIRTY_SECONDS
   const isDescriptionValid = description.trim().length >= 10
 
   async function handleStop() {
-    if (!activeTimer || !isDescriptionValid) return
+    if (!timer || !isDescriptionValid) return
 
     setIsSubmitting(true)
     try {
-      await stopTimer(activeTimer.id, description.trim())
-      setActiveTimer(null)
+      await stopTimer(timer.id, description.trim())
+      removeActiveTimer(timer.id)
       notifyTimerStopped()
       toast.success("Timer gestoppt und Zeiteintrag gespeichert")
       onOpenChange(false)
@@ -77,7 +81,7 @@ export function StopTimerDialog({
     }
   }
 
-  const startDate = new Date(activeTimer.startedAt)
+  const startDate = new Date(timer.startedAt)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,7 +89,7 @@ export function StopTimerDialog({
         <DialogHeader>
           <DialogTitle>Timer stoppen</DialogTitle>
           <DialogDescription>
-            Timer fuer &quot;{activeTimer.ticket.subject}&quot; stoppen und Zeiteintrag speichern.
+            Timer fuer &quot;{timer.ticket.subject}&quot; stoppen und Zeiteintrag speichern.
           </DialogDescription>
         </DialogHeader>
 
@@ -94,8 +98,8 @@ export function StopTimerDialog({
           <div className="rounded-lg border bg-muted/50 p-4 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Arbeitstyp</span>
-              <Badge variant="outline" className={WORK_TYPE_COLORS[activeTimer.workType]}>
-                {WORK_TYPE_LABELS[activeTimer.workType]}
+              <Badge variant="outline" className={WORK_TYPE_COLORS[timer.workType]}>
+                {WORK_TYPE_LABELS[timer.workType]}
               </Badge>
             </div>
             <div className="flex items-center justify-between text-sm">

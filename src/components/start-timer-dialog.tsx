@@ -39,7 +39,7 @@ export function StartTimerDialog({
   ticketId,
   ticketSubject,
 }: StartTimerDialogProps) {
-  const { activeTimer, setActiveTimer } = useTimer()
+  const { hasActiveTimerForTicket, addActiveTimer } = useTimer()
   const [workType, setWorkType] = React.useState<WorkType | "">("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -56,7 +56,7 @@ export function StartTimerDialog({
     setIsSubmitting(true)
     try {
       const entry = await startTimer(ticketId, workType)
-      setActiveTimer(entry)
+      addActiveTimer(entry)
       toast.success("Timer gestartet")
       onOpenChange(false)
     } catch (err) {
@@ -66,7 +66,7 @@ export function StartTimerDialog({
     }
   }
 
-  const hasActiveTimer = !!activeTimer
+  const hasTimerOnThisTicket = hasActiveTimerForTicket(ticketId)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -78,13 +78,13 @@ export function StartTimerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {hasActiveTimer ? (
+        {hasTimerOnThisTicket ? (
           <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm dark:border-orange-800 dark:bg-orange-950">
             <p className="font-medium text-orange-700 dark:text-orange-300">
-              Sie haben bereits einen aktiven Timer.
+              Sie haben bereits einen aktiven Timer auf diesem Ticket.
             </p>
             <p className="mt-1 text-orange-600 dark:text-orange-400">
-              Bitte stoppen Sie den laufenden Timer, bevor Sie einen neuen starten.
+              Bitte stoppen Sie den laufenden Timer fuer dieses Ticket, bevor Sie einen neuen starten.
             </p>
           </div>
         ) : (
@@ -123,7 +123,7 @@ export function StartTimerDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Abbrechen
           </Button>
-          {!hasActiveTimer && (
+          {!hasTimerOnThisTicket && (
             <Button
               onClick={handleStart}
               disabled={!workType || isSubmitting}

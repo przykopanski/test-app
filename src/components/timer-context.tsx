@@ -2,17 +2,20 @@
 
 import * as React from "react"
 import type { TimeEntry } from "@/lib/time-entries"
-import { fetchActiveTimer } from "@/lib/time-entries"
+import { fetchActiveTimers } from "@/lib/time-entries"
 import { useAuth } from "@/components/auth-provider"
 
 interface TimerContextValue {
-  activeTimer: TimeEntry | null
+  activeTimers: TimeEntry[]
   isLoadingTimer: boolean
-  elapsedSeconds: number
+  elapsedSecondsMap: Record<string, number>
   timerStoppedVersion: number
-  setActiveTimer: (timer: TimeEntry | null) => void
+  setActiveTimers: React.Dispatch<React.SetStateAction<TimeEntry[]>>
+  addActiveTimer: (timer: TimeEntry) => void
+  removeActiveTimer: (timerId: string) => void
   refreshTimer: () => Promise<void>
   notifyTimerStopped: () => void
+  hasActiveTimerForTicket: (ticketId: string) => boolean
 }
 
 const TimerContext = React.createContext<TimerContextValue | null>(null)
@@ -27,28 +30,45 @@ export function useTimer() {
 
 export function TimerProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoading: isAuthLoading } = useAuth()
-  const [activeTimer, setActiveTimer] = React.useState<TimeEntry | null>(null)
+  const [activeTimers, setActiveTimers] = React.useState<TimeEntry[]>([])
   const [isLoadingTimer, setIsLoadingTimer] = React.useState(true)
-  const [elapsedSeconds, setElapsedSeconds] = React.useState(0)
+  const [elapsedSecondsMap, setElapsedSecondsMap] = React.useState<Record<string, number>>({})
   const [timerStoppedVersion, setTimerStoppedVersion] = React.useState(0)
 
   const notifyTimerStopped = React.useCallback(() => {
     setTimerStoppedVersion((v) => v + 1)
   }, [])
 
-  // Load active timer on mount
+  const addActiveTimer = React.useCallback((timer: TimeEntry) => {
+    setActiveTimers((prev) => [...prev, timer])
+  }, [])
+
+  const removeActiveTimer = React.useCallback((timerId: string) => {
+    setActiveTimers((prev) => prev.filter((t) => t.id !== timerId))
+    setElapsedSecondsMap((prev) => {
+      const next = { ...prev }
+      delete next[timerId]
+      return next
+    })
+  }, [])
+
+  const hasActiveTimerForTicket = React.useCallback(
+    (ticketId: string) => activeTimers.some((t) => t.ticketId === ticketId),
+    [activeTimers]
+  )
+
+  // Load active timers on mount
   const refreshTimer = React.useCallback(async () => {
     if (!user || user.role !== "technician") {
-      setActiveTimer(null)
+      setActiveTimers([])
       setIsLoadingTimer(false)
       return
     }
     try {
-      const timer = await fetchActiveTimer()
-      setActiveTimer(timer)
+      const timers = await fetchActiveTimers()
+      setActiveTimers(timers)
     } catch {
-      // Silently fail — timer bar just won't show
-      setActiveTimer(null)
+      setActiveTimers([])
     } finally {
       setIsLoadingTimer(false)
     }
@@ -60,35 +80,43 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthLoading, refreshTimer])
 
-  // Compute elapsed seconds every second
+  // Compute elapsed seconds for all active timers every second
   React.useEffect(() => {
-    if (!activeTimer?.isRunning || !activeTimer.startedAt) {
-      setElapsedSeconds(0)
+    const running = activeTimers.filter((t) => t.isRunning && t.startedAt)
+    if (running.length === 0) {
+      setElapsedSecondsMap({})
       return
     }
 
-    function computeElapsed() {
-      const startTime = new Date(activeTimer!.startedAt).getTime()
+    function computeAll() {
       const now = Date.now()
-      setElapsedSeconds(Math.max(0, Math.floor((now - startTime) / 1000)))
+      const map: Record<string, number> = {}
+      for (const timer of running) {
+        const startTime = new Date(timer.startedAt).getTime()
+        map[timer.id] = Math.max(0, Math.floor((now - startTime) / 1000))
+      }
+      setElapsedSecondsMap(map)
     }
 
-    computeElapsed()
-    const interval = setInterval(computeElapsed, 1000)
+    computeAll()
+    const interval = setInterval(computeAll, 1000)
     return () => clearInterval(interval)
-  }, [activeTimer])
+  }, [activeTimers])
 
   const value = React.useMemo<TimerContextValue>(
     () => ({
-      activeTimer,
+      activeTimers,
       isLoadingTimer,
-      elapsedSeconds,
+      elapsedSecondsMap,
       timerStoppedVersion,
-      setActiveTimer,
+      setActiveTimers,
+      addActiveTimer,
+      removeActiveTimer,
       refreshTimer,
       notifyTimerStopped,
+      hasActiveTimerForTicket,
     }),
-    [activeTimer, isLoadingTimer, elapsedSeconds, timerStoppedVersion, refreshTimer, notifyTimerStopped]
+    [activeTimers, isLoadingTimer, elapsedSecondsMap, timerStoppedVersion, addActiveTimer, removeActiveTimer, refreshTimer, notifyTimerStopped, hasActiveTimerForTicket]
   )
 
   return <TimerContext.Provider value={value}>{children}</TimerContext.Provider>

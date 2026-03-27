@@ -101,17 +101,19 @@ export async function stopTimer(id: string, description: string): Promise<TimeEn
   return res.json()
 }
 
-export async function fetchActiveTimer(): Promise<TimeEntry | null> {
+export async function fetchActiveTimers(): Promise<TimeEntry[]> {
   const res = await apiFetch("/time-entries/active")
 
-  if (res.status === 404) return null
+  if (res.status === 404) return []
   if (!res.ok) {
-    throw new Error("Aktiver Timer konnte nicht geladen werden")
+    throw new Error("Aktive Timer konnten nicht geladen werden")
   }
 
   const data = await res.json()
-  // API may return null or empty if no active timer
-  return data ?? null
+  // API returns array of active timers (or single object for backwards compat)
+  if (Array.isArray(data)) return data
+  if (data) return [data]
+  return []
 }
 
 export async function fetchTimeEntries(ticketId: string): Promise<TimeEntry[]> {

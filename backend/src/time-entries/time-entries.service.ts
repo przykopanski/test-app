@@ -33,16 +33,24 @@ export class TimeEntriesService implements OnModuleInit {
 
   /**
    * Create a partial unique index to enforce max one running timer per technician
-   * at the database level. This cannot be expressed via TypeORM decorators.
+   * per ticket at the database level. This cannot be expressed via TypeORM decorators.
+   *
+   * PROJ-11: Changed from per-technician to per-technician-per-ticket to allow
+   * multiple parallel timers on different tickets.
    */
   async onModuleInit() {
     try {
+      // Drop the old single-timer-per-technician constraint if it exists
       await this.dataSource.query(`
-        CREATE UNIQUE INDEX IF NOT EXISTS "UQ_one_running_timer_per_technician"
-        ON "time_entries" ("technicianId")
+        DROP INDEX IF EXISTS "UQ_one_running_timer_per_technician"
+      `);
+      // Create new constraint: one running timer per technician per ticket
+      await this.dataSource.query(`
+        CREATE UNIQUE INDEX IF NOT EXISTS "UQ_one_running_timer_per_technician_per_ticket"
+        ON "time_entries" ("technicianId", "ticketId")
         WHERE "isRunning" = true
       `);
-      this.logger.log('Partial unique index for running timers ensured');
+      this.logger.log('Partial unique index for running timers (per technician per ticket) ensured');
     } catch (error) {
       this.logger.warn('Could not create partial unique index', error);
     }
@@ -50,7 +58,8 @@ export class TimeEntriesService implements OnModuleInit {
 
   /**
    * Start a new timer for the current technician.
-   * Enforces: only one running timer per technician.
+   * PROJ-11: Enforces max one running timer per technician per ticket
+   * (multiple timers on different tickets are allowed).
    */
   async start(dto: StartTimerDto, userId: string) {
     // Check ticket exists
@@ -61,13 +70,13 @@ export class TimeEntriesService implements OnModuleInit {
       throw new NotFoundException('Ticket nicht gefunden');
     }
 
-    // Enforce single active timer per technician
+    // Enforce single active timer per technician per ticket
     const existing = await this.timeEntriesRepo.findOne({
-      where: { technicianId: userId, isRunning: true },
+      where: { technicianId: userId, ticketId: dto.ticketId, isRunning: true },
     });
     if (existing) {
       throw new ConflictException(
-        'Es laeuft bereits ein Timer. Bitte zuerst den aktiven Timer stoppen.',
+        'Du hast bereits einen aktiven Timer auf diesem Ticket',
       );
     }
 
@@ -83,10 +92,10 @@ export class TimeEntriesService implements OnModuleInit {
     try {
       saved = await this.timeEntriesRepo.save(entry);
     } catch (error: unknown) {
-      // Handle race condition: DB unique constraint prevents duplicate running timers
+      // Handle race condition: DB unique constraint prevents duplicate running timers per ticket
       if (error instanceof Error && 'code' in error && (error as { code: string }).code === '23505') {
         throw new ConflictException(
-          'Es laeuft bereits ein Timer. Bitte zuerst den aktiven Timer stoppen.',
+          'Du hast bereits einen aktiven Timer auf diesem Ticket',
         );
       }
       throw error;
@@ -158,20 +167,17 @@ export class TimeEntriesService implements OnModuleInit {
   }
 
   /**
-   * Get the currently running timer for a technician (for ActiveTimerBar).
-   * Returns null if no timer is running.
+   * Get all currently running timers for a technician (for ActiveTimerBar).
+   * PROJ-11: Returns an array of all active timers (was single object before).
    */
   async findActive(userId: string) {
-    const entry = await this.timeEntriesRepo.findOne({
+    const entries = await this.timeEntriesRepo.find({
       where: { technicianId: userId, isRunning: true },
       relations: ['technician', 'ticket'],
+      order: { startedAt: 'ASC' },
     });
 
-    if (!entry) {
-      return null;
-    }
-
-    return this.sanitize(entry);
+    return entries.map((e) => this.sanitize(e));
   }
 
   /**

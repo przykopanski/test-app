@@ -29,6 +29,12 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { TicketFormSheet } from "@/components/ticket-form-sheet"
 import { TicketCloseDialog } from "@/components/ticket-close-dialog"
 import { StartTimerDialog } from "@/components/start-timer-dialog"
@@ -57,7 +63,7 @@ export default function TicketDetailPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
-  const { activeTimer } = useTimer()
+  const { hasActiveTimerForTicket } = useTimer()
   const { hasRole } = useAuth()
   const isTechnician = hasRole("technician")
   const [editFormOpen, setEditFormOpen] = React.useState(false)
@@ -227,15 +233,28 @@ export default function TicketDetailPage() {
           {!isClosed && (
             <>
               {isTechnician && (
-                <Button
-                  size="sm"
-                  onClick={() => setStartTimerOpen(true)}
-                  disabled={!!activeTimer}
-                  aria-label="Timer starten"
-                >
-                  <Play className="mr-2 h-4 w-4" />
-                  Timer starten
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          size="sm"
+                          onClick={() => setStartTimerOpen(true)}
+                          disabled={hasActiveTimerForTicket(ticket.id)}
+                          aria-label="Timer starten"
+                        >
+                          <Play className="mr-2 h-4 w-4" />
+                          Timer starten
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {hasActiveTimerForTicket(ticket.id) && (
+                      <TooltipContent>
+                        Bereits ein Timer auf diesem Ticket aktiv
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               )}
               <Button
                 variant="outline"

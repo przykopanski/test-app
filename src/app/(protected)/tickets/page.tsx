@@ -35,6 +35,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TicketFormSheet } from "@/components/ticket-form-sheet"
 import { StartTimerDialog } from "@/components/start-timer-dialog"
@@ -93,7 +99,7 @@ export default function TicketsPage() {
   const [formOpen, setFormOpen] = React.useState(false)
 
   // Timer (PROJ-4)
-  const { activeTimer } = useTimer()
+  const { hasActiveTimerForTicket } = useTimer()
   const { hasRole } = useAuth()
   const isTechnician = hasRole("technician")
   const [timerDialogTicket, setTimerDialogTicket] = React.useState<{ id: string; subject: string } | null>(null)
@@ -442,19 +448,32 @@ export default function TicketsPage() {
                     {isTechnician && (
                       <TableCell>
                         {ticket.status !== "closed" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              setTimerDialogTicket({ id: ticket.id, subject: ticket.subject })
-                            }}
-                            disabled={!!activeTimer}
-                            aria-label={`Timer starten fuer ${ticket.subject}`}
-                          >
-                            <Play className="h-4 w-4" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      setTimerDialogTicket({ id: ticket.id, subject: ticket.subject })
+                                    }}
+                                    disabled={hasActiveTimerForTicket(ticket.id)}
+                                    aria-label={`Timer starten fuer ${ticket.subject}`}
+                                  >
+                                    <Play className="h-4 w-4" />
+                                  </Button>
+                                </span>
+                              </TooltipTrigger>
+                              {hasActiveTimerForTicket(ticket.id) && (
+                                <TooltipContent>
+                                  Bereits ein Timer auf diesem Ticket aktiv
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </TableCell>
                     )}
