@@ -12,6 +12,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Play,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -36,6 +37,9 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TicketFormSheet } from "@/components/ticket-form-sheet"
+import { StartTimerDialog } from "@/components/start-timer-dialog"
+import { useTimer } from "@/components/timer-context"
+import { useAuth } from "@/components/auth-provider"
 
 import type {
   Ticket,
@@ -87,6 +91,12 @@ export default function TicketsPage() {
   const [users, setUsers] = React.useState<User[]>([])
 
   const [formOpen, setFormOpen] = React.useState(false)
+
+  // Timer (PROJ-4)
+  const { activeTimer } = useTimer()
+  const { hasRole } = useAuth()
+  const isTechnician = hasRole("technician")
+  const [timerDialogTicket, setTimerDialogTicket] = React.useState<{ id: string; subject: string } | null>(null)
 
   // Debounce search
   React.useEffect(() => {
@@ -383,6 +393,7 @@ export default function TicketsPage() {
                       <SortIcon field="createdAt" />
                     </button>
                   </TableHead>
+                  {isTechnician && <TableHead className="w-[60px]" />}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -428,6 +439,25 @@ export default function TicketsPage() {
                     <TableCell className="hidden sm:table-cell text-muted-foreground">
                       {formatDate(ticket.createdAt)}
                     </TableCell>
+                    {isTechnician && (
+                      <TableCell>
+                        {ticket.status !== "closed" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              setTimerDialogTicket({ id: ticket.id, subject: ticket.subject })
+                            }}
+                            disabled={!!activeTimer}
+                            aria-label={`Timer starten fuer ${ticket.subject}`}
+                          >
+                            <Play className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -471,6 +501,16 @@ export default function TicketsPage() {
         onOpenChange={setFormOpen}
         onSubmit={handleCreateTicket}
       />
+
+      {/* Start timer dialog (PROJ-4) */}
+      {timerDialogTicket && (
+        <StartTimerDialog
+          open={!!timerDialogTicket}
+          onOpenChange={(open) => !open && setTimerDialogTicket(null)}
+          ticketId={timerDialogTicket.id}
+          ticketSubject={timerDialogTicket.subject}
+        />
+      )}
     </div>
   )
 }

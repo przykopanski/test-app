@@ -8,11 +8,11 @@ import {
   Pencil,
   AlertCircle,
   Loader2,
-  Clock,
   User,
   Building2,
   Send,
   Lock,
+  Play,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -31,6 +31,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { TicketFormSheet } from "@/components/ticket-form-sheet"
 import { TicketCloseDialog } from "@/components/ticket-close-dialog"
+import { StartTimerDialog } from "@/components/start-timer-dialog"
+import { TimeEntriesTable } from "@/components/time-entries-table"
+import { useTimer } from "@/components/timer-context"
+import { useAuth } from "@/components/auth-provider"
 
 import type { TicketDetail, TicketFormValues } from "@/lib/tickets"
 import {
@@ -53,8 +57,12 @@ export default function TicketDetailPage() {
   const [isLoading, setIsLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
 
+  const { activeTimer } = useTimer()
+  const { hasRole } = useAuth()
+  const isTechnician = hasRole("technician")
   const [editFormOpen, setEditFormOpen] = React.useState(false)
   const [closeDialogOpen, setCloseDialogOpen] = React.useState(false)
+  const [startTimerOpen, setStartTimerOpen] = React.useState(false)
   const [noteText, setNoteText] = React.useState("")
   const [isSubmittingNote, setIsSubmittingNote] = React.useState(false)
 
@@ -218,6 +226,17 @@ export default function TicketDetailPage() {
         <div className="flex gap-2">
           {!isClosed && (
             <>
+              {isTechnician && (
+                <Button
+                  size="sm"
+                  onClick={() => setStartTimerOpen(true)}
+                  disabled={!!activeTimer}
+                  aria-label="Timer starten"
+                >
+                  <Play className="mr-2 h-4 w-4" />
+                  Timer starten
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"
@@ -339,23 +358,8 @@ export default function TicketDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Time entries placeholder (PROJ-4) */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Zeiteintraege</CardTitle>
-              <CardDescription>
-                Wird mit PROJ-4 (Zeiterfassung) befuellt.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col items-center py-8 text-center">
-                <Clock className="h-8 w-8 text-muted-foreground/50" />
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Noch keine Zeiteintraege vorhanden.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Time entries (PROJ-4) */}
+          <TimeEntriesTable ticketId={ticketId} />
         </div>
 
         {/* Sidebar metadata */}
@@ -457,6 +461,14 @@ export default function TicketDetailPage() {
         onOpenChange={setCloseDialogOpen}
         ticketNumber={ticket.ticketNumber}
         onConfirm={handleCloseTicket}
+      />
+
+      {/* Start timer dialog (PROJ-4) */}
+      <StartTimerDialog
+        open={startTimerOpen}
+        onOpenChange={setStartTimerOpen}
+        ticketId={ticketId}
+        ticketSubject={ticket.subject}
       />
     </div>
   )

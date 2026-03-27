@@ -19,6 +19,10 @@ export enum AuditAction {
   TICKET_CREATED = 'ticket_erstellt',
   TICKET_UPDATED = 'ticket_aktualisiert',
   TICKET_CLOSED = 'ticket_geschlossen',
+  TIMER_STARTED = 'timer_gestartet',
+  TIMER_STOPPED = 'timer_gestoppt',
+  TIME_ENTRY_UPDATED = 'zeiteintrag_aktualisiert',
+  TIME_ENTRY_DELETED = 'zeiteintrag_geloescht',
 }
 
 @Entity('audit_log')

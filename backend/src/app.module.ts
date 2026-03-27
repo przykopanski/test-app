@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { CustomersModule } from './customers/customers.module.js';
 import { TicketsModule } from './tickets/tickets.module.js';
+import { TimeEntriesModule } from './time-entries/time-entries.module.js';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { TicketsModule } from './tickets/tickets.module.js';
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
-        limit: 10,
+        limit: 100,
       },
     ]),
     TypeOrmModule.forRootAsync({
@@ -33,6 +34,7 @@ import { TicketsModule } from './tickets/tickets.module.js';
     UsersModule,
     CustomersModule,
     TicketsModule,
+    TimeEntriesModule,
   ],
 })
 export class AppModule {}

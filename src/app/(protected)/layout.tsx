@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { AuthProvider, useAuth } from "@/components/auth-provider"
+import { TimerProvider } from "@/components/timer-context"
+import { ActiveTimerBar } from "@/components/active-timer-bar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
@@ -26,16 +28,19 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-        </header>
-        <div className="flex-1 p-4 md:p-6">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+    <TimerProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <ActiveTimerBar />
+          <header className="flex h-14 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+          </header>
+          <div className="flex-1 p-4 md:p-6">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+    </TimerProvider>
   )
 }
 
