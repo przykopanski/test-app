@@ -1,6 +1,6 @@
 # PROJ-11: Multi-Timer (Parallele Zeiterfassung)
 
-## Status: In Review
+## Status: Deployed
 **Created:** 2026-03-27
 **Last Updated:** 2026-03-27
 

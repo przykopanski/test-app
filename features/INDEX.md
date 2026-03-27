@@ -23,7 +23,7 @@
 | PROJ-9 | Billing Data Storage & Export | Planned | [PROJ-9-billing-data-export.md](PROJ-9-billing-data-export.md) | 2026-03-26 |
 | PROJ-10 | Integration Adapter System | Planned | [PROJ-10-integration-adapter-system.md](PROJ-10-integration-adapter-system.md) | 2026-03-26 |
 
-| PROJ-11 | Multi-Timer (Parallele Zeiterfassung) | In Review | [PROJ-11-multi-timer.md](PROJ-11-multi-timer.md) | 2026-03-27 |
+| PROJ-11 | Multi-Timer (Parallele Zeiterfassung) | Deployed | [PROJ-11-multi-timer.md](PROJ-11-multi-timer.md) | 2026-03-27 |
 
 <!-- Add features above this line -->
 
