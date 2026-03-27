@@ -246,8 +246,8 @@ export function TicketFormSheet({
                     <FormItem>
                       <FormLabel>Ansprechpartner</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
-                        value={field.value ?? ""}
+                        onValueChange={(val) => field.onChange(val === "none" ? "" : val)}
+                        value={field.value || "none"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -255,7 +255,7 @@ export function TicketFormSheet({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Kein Ansprechpartner</SelectItem>
+                          <SelectItem value="none">Kein Ansprechpartner</SelectItem>
                           {contacts.map((contact) => (
                             <SelectItem key={contact.id} value={contact.id}>
                               {contact.firstName} {contact.lastName}
@@ -378,8 +378,8 @@ export function TicketFormSheet({
                   <FormItem>
                     <FormLabel>Zustaendiger Techniker</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? ""}
+                      onValueChange={(val) => field.onChange(val === "none" ? "" : val)}
+                      value={field.value || "none"}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -387,7 +387,7 @@ export function TicketFormSheet({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Nicht zugewiesen</SelectItem>
+                        <SelectItem value="none">Nicht zugewiesen</SelectItem>
                         {users.map((user) => (
                           <SelectItem key={user.id} value={user.id}>
                             {user.firstName} {user.lastName}
