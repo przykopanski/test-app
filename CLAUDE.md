@@ -6,8 +6,9 @@
 
 - **Framework:** Next.js 16 (App Router), TypeScript
 - **Styling:** Tailwind CSS + shadcn/ui (copy-paste components)
-- **Backend:** Supabase (PostgreSQL + Auth + Storage) - optional
-- **Deployment:** Vercel
+- **Backend:** Eigenes Backend (Open-Source, self-hosted) - Technologie wird pro Feature gewählt
+- **Datenbank:** PostgreSQL, SQLite, oder andere Open-Source DB nach Bedarf
+- **Deployment:** Self-hosted hinter Nginx Proxy Manager (kein HTTPS nötig, wird vom Proxy erledigt)
 - **Validation:** Zod + react-hook-form
 - **State:** React useState / Context API
 
@@ -19,7 +20,7 @@ src/
   components/
     ui/             shadcn/ui components (NEVER recreate these)
   hooks/            Custom React hooks
-  lib/              Utilities (supabase.ts, utils.ts)
+  lib/              Utilities (utils.ts, api.ts)
 features/           Feature specifications (PROJ-X-name.md)
   INDEX.md          Feature status overview
 docs/
@@ -32,9 +33,9 @@ docs/
 1. `/requirements` - Create feature spec from idea
 2. `/architecture` - Design tech architecture (PM-friendly, no code)
 3. `/frontend` - Build UI components (shadcn/ui first!)
-4. `/backend` - Build APIs, database, RLS policies
+4. `/backend` - Build APIs, database, server-side logic
 5. `/qa` - Test against acceptance criteria + security audit
-6. `/deploy` - Deploy to Vercel + production-ready checks
+6. `/deploy` - Build & deploy auf self-hosted System
 
 ## Feature Tracking
 
