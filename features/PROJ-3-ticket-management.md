@@ -1,6 +1,6 @@
 # PROJ-3: Ticket Management
 
-## Status: In Review
+## Status: Deployed
 **Created:** 2026-03-26
 **Last Updated:** 2026-03-27
 
@@ -437,4 +437,8 @@ _Code Review performed: 2026-03-27_
 - BUG-19: FK constraint errors return raw 500 instead of 400
 
 ## Deployment
-_To be added by /deploy_
+_Deployed: 2026-03-27_
+
+- Commit: `14233f0` auf `main`
+- Infrastruktur: Docker Compose (Frontend + NestJS Backend + PostgreSQL)
+- Self-hosted hinter Nginx Proxy Manager
