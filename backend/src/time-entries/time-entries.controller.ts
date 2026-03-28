@@ -35,7 +35,7 @@ export class TimeEntriesController {
    * Start a new timer for the authenticated technician.
    */
   @Post('start')
-  @Roles(UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   start(
     @Body() dto: StartTimerDto,
     @CurrentUser() user: { id: string; role: string },
@@ -61,7 +61,7 @@ export class TimeEntriesController {
    * Stop a running timer.
    */
   @Post(':id/stop')
-  @Roles(UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   stop(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: StopTimerDto,
@@ -75,7 +75,7 @@ export class TimeEntriesController {
    * Get the currently running timer for the authenticated user.
    */
   @Get('active')
-  @Roles(UserRole.TECHNICIAN)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   findActive(@CurrentUser() user: { id: string; role: string }) {
     return this.timeEntriesService.findActive(user.id);
   }
