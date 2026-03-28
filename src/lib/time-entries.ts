@@ -126,6 +126,27 @@ export async function fetchTimeEntries(ticketId: string): Promise<TimeEntry[]> {
   return res.json()
 }
 
+export async function fetchTodayTimeEntries(technicianId: string): Promise<TimeEntry[]> {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  const params = new URLSearchParams({
+    technicianId,
+    from: today.toISOString(),
+    to: tomorrow.toISOString(),
+  })
+
+  const res = await apiFetch(`/time-entries?${params}`)
+
+  if (!res.ok) {
+    throw new Error("Heutige Zeiteintraege konnten nicht geladen werden")
+  }
+
+  return res.json()
+}
+
 export async function updateTimeEntry(
   id: string,
   data: { description?: string; billableMinutes?: number; overrideNote?: string }

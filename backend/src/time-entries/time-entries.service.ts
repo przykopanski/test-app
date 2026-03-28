@@ -183,17 +183,34 @@ export class TimeEntriesService implements OnModuleInit {
   /**
    * List time entries for a ticket (chronological order).
    */
-  async findByTicket(filters: TimeEntryFilterDto) {
-    if (!filters.ticketId) {
-      throw new BadRequestException('ticketId ist erforderlich');
+  async findByFilters(filters: TimeEntryFilterDto) {
+    const qb = this.timeEntriesRepo
+      .createQueryBuilder('te')
+      .leftJoinAndSelect('te.technician', 'technician')
+      .leftJoinAndSelect('te.ticket', 'ticket')
+      .orderBy('te.startedAt', 'ASC');
+
+    if (filters.ticketId) {
+      qb.andWhere('te.ticketId = :ticketId', { ticketId: filters.ticketId });
     }
 
-    const entries = await this.timeEntriesRepo.find({
-      where: { ticketId: filters.ticketId },
-      relations: ['technician', 'ticket'],
-      order: { startedAt: 'ASC' },
-    });
+    if (filters.technicianId) {
+      qb.andWhere('te.technicianId = :technicianId', { technicianId: filters.technicianId });
+    }
 
+    if (filters.from) {
+      qb.andWhere('te.startedAt >= :from', { from: filters.from });
+    }
+
+    if (filters.to) {
+      qb.andWhere('te.startedAt < :to', { to: filters.to });
+    }
+
+    if (!filters.ticketId && !filters.technicianId && !filters.from) {
+      throw new BadRequestException('Mindestens ein Filter (ticketId, technicianId oder from) ist erforderlich');
+    }
+
+    const entries = await qb.getMany();
     return entries.map((e) => this.sanitize(e));
   }
 

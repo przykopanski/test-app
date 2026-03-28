@@ -71,7 +71,7 @@ export class TimeEntriesController {
    */
   @Get()
   findAll(@Query() filters: TimeEntryFilterDto) {
-    return this.timeEntriesService.findByTicket(filters);
+    return this.timeEntriesService.findByFilters(filters);
   }
 
   /**
