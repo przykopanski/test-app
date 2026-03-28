@@ -25,8 +25,11 @@ export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
 
   @Get()
-  findAll(@Query() filters: TicketFilterDto) {
-    return this.ticketsService.findAll(filters);
+  findAll(
+    @Query() filters: TicketFilterDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.ticketsService.findAll(filters, user.id);
   }
 
   @Post()

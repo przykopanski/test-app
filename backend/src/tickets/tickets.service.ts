@@ -77,7 +77,7 @@ export class TicketsService {
     'createdBy',
   ];
 
-  async findAll(filters: TicketFilterDto) {
+  async findAll(filters: TicketFilterDto, currentUserId?: string) {
     const page = Math.max(1, parseInt(filters.page ?? '1', 10));
     const limit = Math.min(
       100,
@@ -102,7 +102,9 @@ export class TicketsService {
       });
     }
 
-    if (filters.assigneeId) {
+    if (filters.assignedToMe === 'true' && currentUserId) {
+      qb.andWhere('ticket.assigneeId = :currentUserId', { currentUserId });
+    } else if (filters.assigneeId) {
       if (filters.assigneeId === 'unassigned') {
         qb.andWhere('ticket.assigneeId IS NULL');
       } else {

@@ -22,6 +22,7 @@ export enum AuditAction {
   TIMER_STARTED = 'timer_gestartet',
   TIMER_STOPPED = 'timer_gestoppt',
   TIME_ENTRY_UPDATED = 'zeiteintrag_aktualisiert',
+  TIME_ENTRY_CREATED = 'zeiteintrag_erstellt',
   TIME_ENTRY_DELETED = 'zeiteintrag_geloescht',
 }
 

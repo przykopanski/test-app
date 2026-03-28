@@ -11,6 +11,7 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { RolesGuard } from '../auth/guards/roles.guard.js';
@@ -22,6 +23,7 @@ import { StartTimerDto } from './dto/start-timer.dto.js';
 import { StopTimerDto } from './dto/stop-timer.dto.js';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto.js';
 import { TimeEntryFilterDto } from './dto/time-entry-filter.dto.js';
+import { CreateManualEntryDto } from './dto/create-manual-entry.dto.js';
 
 @Controller('time-entries')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,6 +41,19 @@ export class TimeEntriesController {
     @CurrentUser() user: { id: string; role: string },
   ) {
     return this.timeEntriesService.start(dto, user.id);
+  }
+
+  /**
+   * POST /time-entries/manual
+   * Create a completed (non-running) time entry.
+   */
+  @Post('manual')
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
+  createManual(
+    @Body() dto: CreateManualEntryDto,
+    @CurrentUser() user: { id: string; role: string },
+  ) {
+    return this.timeEntriesService.createManual(dto, user.id);
   }
 
   /**

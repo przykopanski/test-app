@@ -12,10 +12,29 @@ import { DataSource, Repository } from 'typeorm';
 import { TimeEntry } from '../entities/time-entry.entity.js';
 import { Ticket } from '../entities/ticket.entity.js';
 import { AuditLog, AuditAction } from '../entities/audit-log.entity.js';
+import { User, UserRole } from '../entities/user.entity.js';
 import { StartTimerDto } from './dto/start-timer.dto.js';
 import { StopTimerDto } from './dto/stop-timer.dto.js';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto.js';
 import { TimeEntryFilterDto } from './dto/time-entry-filter.dto.js';
+import { CreateManualEntryDto } from './dto/create-manual-entry.dto.js';
+import { SystemSettingsService } from '../system-settings/system-settings.service.js';
+
+const TIMEZONE = 'Europe/Berlin';
+
+/** Returns { todayStart, todayEnd } as UTC Dates for midnight-to-midnight in Europe/Berlin. */
+function getTodayBounds(): { todayStart: Date; todayEnd: Date } {
+  const now = new Date();
+  // Get today's date in Europe/Berlin (YYYY-MM-DD)
+  const localDate = now.toLocaleDateString('en-CA', { timeZone: TIMEZONE });
+  // Compute UTC offset for the timezone: parse "now" as if it were local time
+  const localNow = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }));
+  const offsetMs = now.getTime() - localNow.getTime();
+  // Midnight in Europe/Berlin, expressed as UTC
+  const todayStart = new Date(new Date(`${localDate}T00:00:00.000Z`).getTime() + offsetMs);
+  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+  return { todayStart, todayEnd };
+}
 
 @Injectable()
 export class TimeEntriesService implements OnModuleInit {
@@ -28,7 +47,10 @@ export class TimeEntriesService implements OnModuleInit {
     private ticketsRepo: Repository<Ticket>,
     @InjectRepository(AuditLog)
     private auditRepo: Repository<AuditLog>,
+    @InjectRepository(User)
+    private usersRepo: Repository<User>,
     private dataSource: DataSource,
+    private systemSettings: SystemSettingsService,
   ) {}
 
   /**
@@ -300,6 +322,247 @@ export class TimeEntriesService implements OnModuleInit {
         technicianId: entry.technicianId,
       },
     });
+  }
+
+  /**
+   * GET /time-tracking/today
+   * Returns active timers, today's completed time entries, server-calculated gaps,
+   * and daily totals for a given technician.
+   * If userId is provided (admin view), returns data for that user.
+   */
+  async getTodayDashboard(technicianId: string) {
+    const now = new Date();
+    const { todayStart, todayEnd } = getTodayBounds();
+
+    // Fetch active timers
+    const activeTimers = await this.timeEntriesRepo.find({
+      where: { technicianId, isRunning: true },
+      relations: ['ticket'],
+      order: { startedAt: 'ASC' },
+    });
+
+    // Fetch completed entries for today
+    const completedEntries = await this.timeEntriesRepo
+      .createQueryBuilder('te')
+      .leftJoinAndSelect('te.ticket', 'ticket')
+      .where('te.technicianId = :technicianId', { technicianId })
+      .andWhere('te.isRunning = false')
+      .andWhere('te.startedAt >= :todayStart', { todayStart: todayStart.toISOString() })
+      .andWhere('te.startedAt < :todayEnd', { todayEnd: todayEnd.toISOString() })
+      .orderBy('te.startedAt', 'ASC')
+      .getMany();
+
+    // Build active timers response
+    const activeTimerData = activeTimers.map((t) => ({
+      timerId: t.id,
+      ticketId: t.ticketId,
+      ticketNumber: t.ticket?.ticketNumber ?? 0,
+      ticketTitle: t.ticket?.subject ?? '',
+      workType: t.workType,
+      startedAt: t.startedAt.toISOString(),
+      elapsedSeconds: Math.floor((now.getTime() - t.startedAt.getTime()) / 1000),
+    }));
+
+    // Build time entries response
+    const timeEntryData = completedEntries.map((e) => ({
+      entryId: e.id,
+      ticketId: e.ticketId,
+      ticketNumber: e.ticket?.ticketNumber ?? 0,
+      ticketTitle: e.ticket?.subject ?? '',
+      workType: e.workType,
+      startTime: e.startedAt.toISOString(),
+      endTime: e.stoppedAt?.toISOString() ?? '',
+      durationMinutes: e.rawSeconds ? Math.round(e.rawSeconds / 60) : 0,
+      description: e.description,
+      isBillable: (e.billableMinutes ?? 0) > 0,
+    }));
+
+    // Calculate gaps between completed entries (gated by system setting)
+    const gapDetectionEnabled = await this.systemSettings.get('gap_detection_enabled');
+    let gaps: Array<{ gapStart: string; gapEnd: string; durationMinutes: number }> = [];
+    if (gapDetectionEnabled === true) {
+      const thresholdMinutes = (await this.systemSettings.get('gap_threshold_minutes') as number) ?? 30;
+      gaps = this.calculateGaps(completedEntries, thresholdMinutes);
+    }
+
+    // Calculate daily totals
+    const totalMinutesRaw = completedEntries.reduce(
+      (sum, e) => sum + (e.rawSeconds ? Math.round(e.rawSeconds / 60) : 0),
+      0,
+    );
+    const totalMinutesBillable = completedEntries.reduce(
+      (sum, e) => sum + (e.billableMinutes ?? 0),
+      0,
+    );
+
+    const byWorkTypeMap = new Map<string, number>();
+    for (const e of completedEntries) {
+      const mins = e.rawSeconds ? Math.round(e.rawSeconds / 60) : 0;
+      byWorkTypeMap.set(e.workType, (byWorkTypeMap.get(e.workType) ?? 0) + mins);
+    }
+    const byWorkType = Array.from(byWorkTypeMap.entries()).map(([workType, minutes]) => ({
+      workType,
+      minutes,
+    }));
+
+    return {
+      date: todayStart.toISOString().split('T')[0],
+      activeTimers: activeTimerData,
+      timeEntries: timeEntryData,
+      gaps,
+      dailyTotals: {
+        totalMinutesRaw,
+        totalMinutesBillable,
+        byWorkType,
+      },
+    };
+  }
+
+  /**
+   * GET /admin/dashboard/today
+   * Returns summary for all active technicians for today.
+   */
+  async getAdminTodayOverview() {
+    const { todayStart, todayEnd } = getTodayBounds();
+
+    // Get all active users who may have time entries
+    const technicians = await this.usersRepo.find({
+      where: { isActive: true },
+      order: { firstName: 'ASC', lastName: 'ASC' },
+    });
+
+    const result = [];
+
+    for (const tech of technicians) {
+      // Count active timers
+      const activeTimerCount = await this.timeEntriesRepo.count({
+        where: { technicianId: tech.id, isRunning: true },
+      });
+
+      // Sum raw seconds for today's completed entries
+      const todayResult = await this.timeEntriesRepo
+        .createQueryBuilder('te')
+        .select('COALESCE(SUM(te.rawSeconds), 0)', 'totalSeconds')
+        .addSelect('MAX(te.stoppedAt)', 'lastStopped')
+        .where('te.technicianId = :techId', { techId: tech.id })
+        .andWhere('te.isRunning = false')
+        .andWhere('te.startedAt >= :todayStart', { todayStart: todayStart.toISOString() })
+        .andWhere('te.startedAt < :todayEnd', { todayEnd: todayEnd.toISOString() })
+        .getRawOne();
+
+      const totalSeconds = parseInt(todayResult?.totalSeconds ?? '0', 10);
+      const lastStopped = todayResult?.lastStopped ?? null;
+
+      // Determine last activity (either last stopped entry or latest active timer start)
+      let lastActivity: string | null = lastStopped
+        ? new Date(lastStopped).toISOString()
+        : null;
+
+      if (activeTimerCount > 0) {
+        const latestActive = await this.timeEntriesRepo.findOne({
+          where: { technicianId: tech.id, isRunning: true },
+          order: { startedAt: 'DESC' },
+        });
+        if (latestActive) {
+          const activeStart = latestActive.startedAt.toISOString();
+          if (!lastActivity || activeStart > lastActivity) {
+            lastActivity = activeStart;
+          }
+        }
+      }
+
+      result.push({
+        userId: tech.id,
+        displayName: `${tech.firstName} ${tech.lastName}`,
+        totalMinutesToday: Math.round(totalSeconds / 60),
+        activeTimerCount,
+        lastActivity,
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * POST /time-entries/manual
+   * Create a completed (non-running) time entry. Admin only.
+   */
+  async createManual(dto: CreateManualEntryDto, userId: string) {
+    // Validate ticket exists
+    const ticket = await this.ticketsRepo.findOne({
+      where: { id: dto.ticketId },
+    });
+    if (!ticket) {
+      throw new NotFoundException('Ticket nicht gefunden');
+    }
+
+    const startedAt = new Date(dto.startedAt);
+    const stoppedAt = new Date(dto.stoppedAt);
+
+    if (stoppedAt <= startedAt) {
+      throw new BadRequestException('Endzeit muss nach der Startzeit liegen');
+    }
+
+    const rawSeconds = Math.floor((stoppedAt.getTime() - startedAt.getTime()) / 1000);
+    const billableMinutes = this.roundToBillableMinutes(rawSeconds);
+
+    const entry = this.timeEntriesRepo.create({
+      ticketId: dto.ticketId,
+      technicianId: userId,
+      workType: dto.workType,
+      startedAt,
+      stoppedAt,
+      isRunning: false,
+      rawSeconds,
+      billableMinutes,
+      description: dto.description,
+    });
+
+    const saved = await this.timeEntriesRepo.save(entry);
+
+    await this.auditRepo.save({
+      userId,
+      action: AuditAction.TIME_ENTRY_CREATED,
+      metadata: {
+        timeEntryId: saved.id,
+        ticketId: dto.ticketId,
+        ticketNumber: ticket.ticketNumber,
+        workType: dto.workType,
+        manual: true,
+      },
+    });
+
+    return this.findOneWithRelations(saved.id);
+  }
+
+  /**
+   * Calculate gaps exceeding thresholdMinutes between completed time entries.
+   * No gap before the first entry (work start is unknown).
+   */
+  private calculateGaps(entries: TimeEntry[], thresholdMinutes: number) {
+    const gaps: Array<{ gapStart: string; gapEnd: string; durationMinutes: number }> = [];
+
+    if (entries.length < 2) return gaps;
+
+    for (let i = 0; i < entries.length - 1; i++) {
+      const currentEnd = entries[i].stoppedAt;
+      const nextStart = entries[i + 1].startedAt;
+
+      if (!currentEnd) continue;
+
+      const gapMs = nextStart.getTime() - currentEnd.getTime();
+      const gapMinutes = Math.round(gapMs / (1000 * 60));
+
+      if (gapMinutes > thresholdMinutes) {
+        gaps.push({
+          gapStart: currentEnd.toISOString(),
+          gapEnd: nextStart.toISOString(),
+          durationMinutes: gapMinutes,
+        });
+      }
+    }
+
+    return gaps;
   }
 
   // --- Private helpers ---

@@ -6,3 +6,4 @@ export { Contact } from './contact.entity.js';
 export { Ticket, TicketPriority, TicketStatus } from './ticket.entity.js';
 export { TicketNote } from './ticket-note.entity.js';
 export { TimeEntry, WorkType } from './time-entry.entity.js';
+export { SystemSetting } from './system-setting.entity.js';

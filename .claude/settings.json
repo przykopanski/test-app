@@ -16,7 +16,15 @@
       "Bash(kill:*)",
       "Bash(npx shadcn@latest add:*)",
       "Bash(ls:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(gh auth:*)",
+      "Read(//Users/matthias/.ssh/**)",
+      "Bash(ssh-add -l)",
+      "Bash(docker --version)",
+      "Bash(docker info:*)",
+      "Bash(node -e \"const l = require\\(''lucide-react''\\); console.log\\(typeof l.Ticket\\)\")",
+      "Bash(git add:*)",
+      "Bash(docker-compose ps:*)"
     ]
   }
 }

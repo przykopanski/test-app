@@ -4,10 +4,14 @@ import {
   IsUUID,
   IsString,
   IsNumberString,
+  IsBooleanString,
 } from 'class-validator';
 import { TicketPriority, TicketStatus } from '../../entities/ticket.entity.js';
 
 export class TicketFilterDto {
+  @IsBooleanString()
+  @IsOptional()
+  assignedToMe?: string;
   @IsNumberString()
   @IsOptional()
   page?: string;

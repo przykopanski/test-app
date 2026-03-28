@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module.js';
 import { CustomersModule } from './customers/customers.module.js';
 import { TicketsModule } from './tickets/tickets.module.js';
 import { TimeEntriesModule } from './time-entries/time-entries.module.js';
+import { SystemSettingsModule } from './system-settings/system-settings.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { TimeEntriesModule } from './time-entries/time-entries.module.js';
     CustomersModule,
     TicketsModule,
     TimeEntriesModule,
+    SystemSettingsModule,
   ],
 })
 export class AppModule {}

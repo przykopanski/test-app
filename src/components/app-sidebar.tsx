@@ -9,6 +9,7 @@ import {
   User,
   LogOut,
   Building2,
+  CalendarDays,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth-provider"
@@ -64,6 +65,12 @@ const mainNavItems: NavItem[] = [
 ]
 
 const adminNavItems: NavItem[] = [
+  {
+    title: "Techniker heute",
+    href: "/admin/today",
+    icon: CalendarDays,
+    roles: ["admin", "office"],
+  },
   {
     title: "Benutzerverwaltung",
     href: "/admin/users",
