@@ -17,7 +17,7 @@
 | PROJ-3 | Ticket Management | Deployed | [PROJ-3-ticket-management.md](PROJ-3-ticket-management.md) | 2026-03-26 |
 | PROJ-4 | Stopwatch & Time Tracking | Deployed | [PROJ-4-stopwatch-time-tracking.md](PROJ-4-stopwatch-time-tracking.md) | 2026-03-26 |
 | PROJ-5 | Today's Work Dashboard | Deployed | [PROJ-5-todays-work-dashboard.md](PROJ-5-todays-work-dashboard.md) | 2026-03-26 |
-| PROJ-6 | On-Site Service Report | Planned | [PROJ-6-onsite-service-report.md](PROJ-6-onsite-service-report.md) | 2026-03-26 |
+| PROJ-6 | On-Site Service Report | In Progress | [PROJ-6-onsite-service-report.md](PROJ-6-onsite-service-report.md) | 2026-03-26 |
 | PROJ-7 | Digital Signature Capture | Planned | [PROJ-7-digital-signature.md](PROJ-7-digital-signature.md) | 2026-03-26 |
 | PROJ-8 | PDF Service Report Generation | Planned | [PROJ-8-pdf-service-report.md](PROJ-8-pdf-service-report.md) | 2026-03-26 |
 | PROJ-9 | Billing Data Storage & Export | Planned | [PROJ-9-billing-data-export.md](PROJ-9-billing-data-export.md) | 2026-03-26 |
