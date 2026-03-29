@@ -1,6 +1,6 @@
 # PROJ-12: Ticket Material Tracking
 
-## Status: Planned
+## Status: In Progress
 **Created:** 2026-03-29
 **Last Updated:** 2026-03-29
 
@@ -61,7 +61,95 @@
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+**Designed by /architecture on 2026-03-29**
+
+### Component Structure
+
+```
+Ticket-Detailseite /tickets/[id]
++-- (bestehend) Ticket-Header, Timer, Zeiteinträge, Notizen
++-- MaterialSection (NEU)
+    +-- MaterialList
+    |   +-- MaterialRow (pro Eintrag)
+    |   |   +-- Artikelname, Menge, Netto-EP, MwSt.-Satz, Brutto
+    |   |   +-- Bearbeiten-Button (Rollen-abhängig)
+    |   |   +-- Löschen-Button (nur Admin)
+    |   +-- Gesperrter Hinweis (wenn Ticket closed + kein Admin)
+    +-- Button "Material hinzufügen" (gesperrt wenn Ticket closed + kein Admin)
+
+Material-Dialog (Hinzufügen / Bearbeiten)
++-- Artikelname (Freitext-Input)
++-- Menge (Zahlen-Input)
++-- Einzelpreis netto (Dezimal-Input, EUR)
++-- MwSt.-Satz (Dropdown → lädt aktive Sätze)
++-- Brutto-Vorschau (live berechnet, read-only)
++-- Speichern / Abbrechen
+
+Admin-Bereich: MwSt.-Sätze /admin/vat-rates (NEU)
++-- VatRateList
+|   +-- VatRateRow (Label, Prozentwert, aktiv/inaktiv, Bearbeiten)
++-- Button "Satz hinzufügen"
++-- VatRateFormDialog (Hinzufügen / Bearbeiten)
+```
+
+### Data Model
+
+**Tabelle `ticket_material`:**
+- id (UUID)
+- ticketId — Fremdschlüssel auf Ticket
+- name — Artikelname (Freitext)
+- quantity — Menge (ganze Zahl, 1–9999)
+- unitPriceNet — Einzelpreis netto (EUR, 2 Dezimalstellen)
+- vatRateSnapshot — MwSt.-Prozentsatz zum Zeitpunkt der Erfassung (Snapshot)
+- vatRateLabel — MwSt.-Label zum Zeitpunkt der Erfassung (Snapshot)
+- vatRateId — Fremdschlüssel auf VatRate (nullable)
+- createdById — Wer hat es erfasst
+- createdAt / updatedAt
+
+> Snapshot-Speicherung: Rate + Label werden beim Speichern kopiert, damit spätere Änderungen an MwSt.-Sätzen alte Einträge nicht beeinflussen (rechtssicher).
+
+**Tabelle `vat_rate`:**
+- id (UUID)
+- label — Anzeigename (z.B. "MwSt. 19%")
+- rate — Prozentwert (Dezimalzahl, z.B. 19.00)
+- isActive — erscheint im Dropdown wenn true
+
+Standard-Datensätze bei Erstinstallation: 19%, 7%, 0%
+
+### API-Endpunkte
+
+| Endpunkt | Methode | Rolle | Zweck |
+|----------|---------|-------|-------|
+| `/tickets/:id/materials` | GET | Alle | Materialliste eines Tickets laden |
+| `/tickets/:id/materials` | POST | Alle | Material hinzufügen |
+| `/tickets/:id/materials/:mid` | PATCH | Alle / nur Admin bei closed | Material bearbeiten |
+| `/tickets/:id/materials/:mid` | DELETE | Admin only | Material löschen |
+| `/vat-rates` | GET | Alle | Aktive MwSt.-Sätze laden (für Dropdown) |
+| `/admin/vat-rates` | GET | Admin | Alle MwSt.-Sätze inkl. inaktive |
+| `/admin/vat-rates` | POST | Admin | Neuen Satz anlegen |
+| `/admin/vat-rates/:id` | PATCH | Admin | Satz bearbeiten / deaktivieren |
+
+### Tech-Entscheidungen
+
+| Entscheidung | Wahl | Warum |
+|-------------|------|-------|
+| MwSt. als eigene Tabelle | `vat_rate` Entity | Zu strukturiert für SystemSettings Key-Value-Store |
+| Snapshot-Speicherung | Rate + Label beim Speichern kopieren | Rechtssichere Dokumentation |
+| Bruttoberechnung | Frontend (live) + Backend (gespeichert) | Frontend für sofortiges Feedback; Backend speichert Kontrollwert |
+| Admin-Seite für MwSt. | `/admin/vat-rates` | Passt ins bestehende `/admin/`-Muster |
+| Material im Ticket | Neuer Abschnitt auf `/tickets/[id]` | Material gehört zum Ticket-Kontext, kein extra Routing |
+
+### Neue Dateien
+
+**Backend:** `entities/ticket-material.entity.ts`, `entities/vat-rate.entity.ts`, `materials/` (Controller, Service, DTOs, Module), `vat-rates/` (Controller, Service, DTOs, Module)
+
+**Frontend:** `components/material-list.tsx`, `components/material-form-dialog.tsx`, `app/(protected)/admin/vat-rates/page.tsx`, `lib/materials.ts`
+
+**Geändert:** `tickets/[id]/page.tsx`, `app-sidebar.tsx`, `backend/app.module.ts`, `backend/entities/index.ts`
+
+### Keine neuen npm-Pakete nötig
+Table, Dialog, Input, Select, Switch, AlertDialog sind bereits installiert.
 
 ## QA Test Results
 _To be added by /qa_
