@@ -1,6 +1,6 @@
 # PROJ-5: Today's Work Dashboard
 
-## Status: In Review
+## Status: Deployed
 **Created:** 2026-03-26
 **Last Updated:** 2026-03-28
 
@@ -444,4 +444,22 @@ All required packages are already installed:
 - **Recommendation:** Fix BUG-1 (enable gap detection by default or provide admin toggle UI) and BUG-2 (allow technicians to create manual entries for gap backfill) before deployment. BUG-3 (timezone) should also be fixed for production use.
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed:** 2026-03-29
+**Method:** Docker Compose (self-hosted)
+**Containers:** frontend (port 3000), backend (port 3001), db (PostgreSQL 16)
+
+### Pre-Deployment Fixes Verified
+- BUG-1: Gap detection enabled by default (`gap_detection_enabled: true`)
+- BUG-2: Manual time entry accessible by Technicians (`@Roles(ADMIN, TECHNICIAN)`)
+- BUG-3: Timezone handling uses `Europe/Berlin` bounds calculation
+
+### Deployment Checklist
+- [x] Frontend build passes
+- [x] Backend build passes
+- [x] Docker images built successfully
+- [x] All containers running and healthy
+- [x] Frontend accessible (HTTP 200)
+- [x] Backend NestJS started successfully
+- [x] Git pushed to remote
+- [x] Feature spec updated to Deployed
