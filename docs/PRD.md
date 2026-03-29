@@ -25,6 +25,7 @@ Ein modernes IT-Service-Management-System (MSP-System) für IT-Systemhäuser, da
 | P1 | PDF Service Report Generation | PROJ-8 | Planned |
 | P1 | Billing Data Storage & Export | PROJ-9 | Planned |
 | P2 | Integration Adapter System | PROJ-10 | Planned |
+| P1 | Ticket Material Tracking | PROJ-12 | Planned |
 
 ## Success Metrics
 - Techniker benötigt < 30 Sekunden, um einen Timer zu starten
