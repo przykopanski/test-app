@@ -59,7 +59,7 @@ export function TimerProvider({ children }: { children: React.ReactNode }) {
 
   // Load active timers on mount
   const refreshTimer = React.useCallback(async () => {
-    if (!user || user.role !== "technician") {
+    if (!user || (user.role !== "technician" && user.role !== "admin")) {
       setActiveTimers([])
       setIsLoadingTimer(false)
       return
