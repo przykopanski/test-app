@@ -40,6 +40,7 @@ import { TicketCloseDialog } from "@/components/ticket-close-dialog"
 import { StartTimerDialog } from "@/components/start-timer-dialog"
 import { TimeEntriesTable } from "@/components/time-entries-table"
 import { MaterialList } from "@/components/material-list"
+import { ServiceReportSection } from "@/components/service-report-section"
 import { useTimer } from "@/components/timer-context"
 import { useAuth } from "@/components/auth-provider"
 
@@ -54,6 +55,8 @@ import {
   STATUS_LABELS,
   STATUS_COLORS,
 } from "@/lib/tickets"
+import { fetchTimeEntries } from "@/lib/time-entries"
+import { fetchServiceReport } from "@/lib/service-reports"
 
 export default function TicketDetailPage() {
   const params = useParams()
@@ -72,6 +75,9 @@ export default function TicketDetailPage() {
   const [startTimerOpen, setStartTimerOpen] = React.useState(false)
   const [noteText, setNoteText] = React.useState("")
   const [isSubmittingNote, setIsSubmittingNote] = React.useState(false)
+  const [hasOnsiteEntries, setHasOnsiteEntries] = React.useState(false)
+  const [hasCompletedReport, setHasCompletedReport] = React.useState(false)
+  const [reportStatus, setReportStatus] = React.useState<"draft" | "completed" | null>(null)
 
   const loadTicket = React.useCallback(async () => {
     setIsLoading(true)
@@ -131,6 +137,35 @@ export default function TicketDetailPage() {
       setIsSubmittingNote(false)
     }
   }
+
+  // Load service report status
+  const loadReportStatus = React.useCallback(() => {
+    fetchServiceReport(ticketId).then((report) => {
+      setReportStatus(report?.status ?? null)
+    }).catch(() => {})
+  }, [ticketId])
+
+  React.useEffect(() => {
+    loadReportStatus()
+  }, [loadReportStatus])
+
+  // Load guard data when close dialog opens
+  React.useEffect(() => {
+    if (closeDialogOpen) {
+      Promise.all([
+        fetchTimeEntries(ticketId),
+        fetchServiceReport(ticketId),
+      ]).then(([entries, report]) => {
+        setHasOnsiteEntries(
+          entries.some((e) => e.workType === "onsite" || e.workType === "travel")
+        )
+        setHasCompletedReport(report?.status === "completed")
+        setReportStatus(report?.status ?? null)
+      }).catch(() => {
+        // Fail silently — guard is a warning, not a blocker
+      })
+    }
+  }, [closeDialogOpen, ticketId])
 
   function formatDateTime(dateStr: string) {
     return new Date(dateStr).toLocaleString("de-DE", {
@@ -378,11 +413,14 @@ export default function TicketDetailPage() {
             </CardContent>
           </Card>
 
+          {/* Service Report (PROJ-6) */}
+          <ServiceReportSection ticketId={ticketId} ticketStatus={ticket.status} />
+
           {/* Material (PROJ-12) */}
           <MaterialList ticketId={ticketId} ticketStatus={ticket.status} />
 
           {/* Time entries (PROJ-4) */}
-          <TimeEntriesTable ticketId={ticketId} />
+          <TimeEntriesTable ticketId={ticketId} serviceReportStatus={reportStatus} />
         </div>
 
         {/* Sidebar metadata */}
@@ -484,6 +522,8 @@ export default function TicketDetailPage() {
         onOpenChange={setCloseDialogOpen}
         ticketNumber={ticket.ticketNumber}
         onConfirm={handleCloseTicket}
+        hasOnsiteEntries={hasOnsiteEntries}
+        hasCompletedReport={hasCompletedReport}
       />
 
       {/* Start timer dialog (PROJ-4) */}

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, Plus, Phone, Monitor, MapPin } from "lucide-react"
+import { Loader2, Plus, Phone, Monitor, MapPin, Car } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -43,6 +43,7 @@ const WORK_TYPE_ICONS: Record<WorkType, React.ReactNode> = {
   phone: <Phone className="h-4 w-4" />,
   remote: <Monitor className="h-4 w-4" />,
   onsite: <MapPin className="h-4 w-4" />,
+  travel: <Car className="h-4 w-4" />,
 }
 
 function toTimeInputValue(dateStr: string): string {
@@ -64,6 +65,7 @@ export function AddTimeEntryDialog({
   const [workType, setWorkType] = React.useState<WorkType | "">("")
   const [startTime, setStartTime] = React.useState("")
   const [endTime, setEndTime] = React.useState("")
+  const [distanceKm, setDistanceKm] = React.useState("")
   const [description, setDescription] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -73,12 +75,16 @@ export function AddTimeEntryDialog({
       setWorkType("")
       setStartTime(prefillStart ? toTimeInputValue(prefillStart) : "")
       setEndTime(prefillEnd ? toTimeInputValue(prefillEnd) : "")
+      setDistanceKm("")
       setDescription("")
     }
   }, [open, prefillStart, prefillEnd])
 
+  const isTravel = workType === "travel"
+  const parsedKm = parseFloat(distanceKm.replace(",", "."))
+  const isKmValid = !isTravel || (!isNaN(parsedKm) && parsedKm >= 0)
   const isDescriptionValid = description.trim().length >= 10
-  const isFormValid = ticketId && workType && startTime && endTime && isDescriptionValid
+  const isFormValid = ticketId && workType && startTime && endTime && isDescriptionValid && isKmValid
 
   async function handleCreate() {
     if (!isFormValid) return
@@ -106,6 +112,7 @@ export function AddTimeEntryDialog({
           startedAt: startDate.toISOString(),
           stoppedAt: endDate.toISOString(),
           description: description.trim(),
+          ...(isTravel ? { distanceKm: parsedKm } : {}),
         }),
       })
 
@@ -165,9 +172,9 @@ export function AddTimeEntryDialog({
             <RadioGroup
               value={workType}
               onValueChange={(v) => setWorkType(v as WorkType)}
-              className="grid grid-cols-3 gap-3"
+              className="grid grid-cols-2 gap-3 sm:grid-cols-4"
             >
-              {(["phone", "remote", "onsite"] as const).map((type) => (
+              {(["phone", "remote", "onsite", "travel"] as const).map((type) => (
                 <div key={type}>
                   <RadioGroupItem
                     value={type}
@@ -187,6 +194,29 @@ export function AddTimeEntryDialog({
               ))}
             </RadioGroup>
           </div>
+
+          {/* Kilometer input for travel */}
+          {isTravel && (
+            <div className="space-y-2">
+              <Label htmlFor="entry-distance">
+                <Car className="mr-1 inline h-4 w-4" />
+                Gefahrene Kilometer
+              </Label>
+              <Input
+                id="entry-distance"
+                type="text"
+                inputMode="decimal"
+                placeholder="z.B. 23,5"
+                value={distanceKm}
+                onChange={(e) => setDistanceKm(e.target.value)}
+              />
+              {distanceKm && isNaN(parsedKm) && (
+                <p className="text-xs text-destructive">
+                  Bitte geben Sie eine gueltige Zahl ein.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Time range */}
           <div className="grid grid-cols-2 gap-4">

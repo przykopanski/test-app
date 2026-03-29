@@ -18,6 +18,7 @@ import { StopTimerDto } from './dto/stop-timer.dto.js';
 import { UpdateTimeEntryDto } from './dto/update-time-entry.dto.js';
 import { TimeEntryFilterDto } from './dto/time-entry-filter.dto.js';
 import { CreateManualEntryDto } from './dto/create-manual-entry.dto.js';
+import { ServiceReport, ServiceReportStatus } from '../entities/service-report.entity.js';
 import { SystemSettingsService } from '../system-settings/system-settings.service.js';
 
 const TIMEZONE = 'Europe/Berlin';
@@ -49,6 +50,8 @@ export class TimeEntriesService implements OnModuleInit {
     private auditRepo: Repository<AuditLog>,
     @InjectRepository(User)
     private usersRepo: Repository<User>,
+    @InjectRepository(ServiceReport)
+    private serviceReportsRepo: Repository<ServiceReport>,
     private dataSource: DataSource,
     private systemSettings: SystemSettingsService,
   ) {}
@@ -172,6 +175,11 @@ export class TimeEntriesService implements OnModuleInit {
     entry.billableMinutes = billableMinutes;
     entry.description = dto.description;
 
+    // Save distance for travel entries
+    if (dto.distanceKm !== undefined) {
+      entry.distanceKm = dto.distanceKm;
+    }
+
     await this.timeEntriesRepo.save(entry);
 
     await this.auditRepo.save({
@@ -237,15 +245,11 @@ export class TimeEntriesService implements OnModuleInit {
   }
 
   /**
-   * Admin: update a time entry (description, billable override).
+   * Update a time entry.
+   * - Admin: can update description, billable override, distanceKm
+   * - Technician: can only update distanceKm on their own travel entries
    */
   async update(id: string, dto: UpdateTimeEntryDto, userId: string, userRole: string) {
-    if (userRole !== 'admin') {
-      throw new ForbiddenException(
-        'Nur Administratoren koennen Zeiteintraege bearbeiten',
-      );
-    }
-
     const entry = await this.timeEntriesRepo.findOne({ where: { id } });
     if (!entry) {
       throw new NotFoundException('Zeiteintrag nicht gefunden');
@@ -255,6 +259,32 @@ export class TimeEntriesService implements OnModuleInit {
       throw new BadRequestException(
         'Laufende Timer koennen nicht bearbeitet werden',
       );
+    }
+
+    // Check if the ticket's service report is completed — block km edits
+    const report = await this.serviceReportsRepo.findOne({
+      where: { ticketId: entry.ticketId },
+    });
+    if (report?.status === ServiceReportStatus.COMPLETED && dto.distanceKm !== undefined) {
+      throw new BadRequestException(
+        'Kilometer koennen nicht geaendert werden, da der Einsatzbericht bereits abgeschlossen ist.',
+      );
+    }
+
+    // Technicians can only update distanceKm on their own travel entries
+    const isTechnicianOwnEntry = entry.technicianId === userId;
+    const isOnlyDistanceUpdate =
+      dto.distanceKm !== undefined &&
+      dto.description === undefined &&
+      dto.billableMinutes === undefined &&
+      dto.overrideNote === undefined;
+
+    if (userRole !== 'admin') {
+      if (!isTechnicianOwnEntry || !isOnlyDistanceUpdate) {
+        throw new ForbiddenException(
+          'Nur Administratoren koennen Zeiteintraege bearbeiten. Techniker koennen nur Kilometer auf eigenen Fahrt-Eintraegen aktualisieren.',
+        );
+      }
     }
 
     // If billableMinutes is being changed, overrideNote is required
@@ -274,6 +304,10 @@ export class TimeEntriesService implements OnModuleInit {
 
     if (dto.description !== undefined) {
       entry.description = dto.description;
+    }
+
+    if (dto.distanceKm !== undefined) {
+      entry.distanceKm = dto.distanceKm;
     }
 
     await this.timeEntriesRepo.save(entry);
@@ -516,6 +550,7 @@ export class TimeEntriesService implements OnModuleInit {
       rawSeconds,
       billableMinutes,
       description: dto.description,
+      distanceKm: dto.distanceKm ?? null,
     });
 
     const saved = await this.timeEntriesRepo.save(entry);
@@ -605,6 +640,7 @@ export class TimeEntriesService implements OnModuleInit {
       description: entry.description,
       billableOverride: entry.billableOverride,
       overrideNote: entry.overrideNote,
+      distanceKm: entry.distanceKm ? Number(entry.distanceKm) : null,
       technician: entry.technician
         ? {
             id: entry.technician.id,

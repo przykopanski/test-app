@@ -4,6 +4,7 @@ import { TimeEntry } from '../entities/time-entry.entity.js';
 import { Ticket } from '../entities/ticket.entity.js';
 import { AuditLog } from '../entities/audit-log.entity.js';
 import { User } from '../entities/user.entity.js';
+import { ServiceReport } from '../entities/service-report.entity.js';
 import { TimeEntriesController } from './time-entries.controller.js';
 import { TimeTrackingController } from './time-tracking.controller.js';
 import { AdminDashboardController } from './admin-dashboard.controller.js';
@@ -12,7 +13,7 @@ import { SystemSettingsModule } from '../system-settings/system-settings.module.
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TimeEntry, Ticket, AuditLog, User]),
+    TypeOrmModule.forFeature([TimeEntry, Ticket, AuditLog, User, ServiceReport]),
     SystemSettingsModule,
   ],
   controllers: [

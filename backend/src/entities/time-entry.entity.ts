@@ -15,6 +15,7 @@ export enum WorkType {
   PHONE = 'phone',
   REMOTE = 'remote',
   ONSITE = 'onsite',
+  TRAVEL = 'travel',
 }
 
 @Entity('time_entries')
@@ -64,6 +65,9 @@ export class TimeEntry {
 
   @Column({ type: 'text', nullable: true })
   overrideNote!: string | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 1, nullable: true })
+  distanceKm!: number | null;
 
   @CreateDateColumn()
   createdAt!: Date;

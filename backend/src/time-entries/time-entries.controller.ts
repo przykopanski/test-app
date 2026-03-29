@@ -94,7 +94,7 @@ export class TimeEntriesController {
    * Admin: update a time entry.
    */
   @Patch(':id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.TECHNICIAN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: UpdateTimeEntryDto,

@@ -6,7 +6,7 @@ export class StartTimerDto {
   ticketId!: string;
 
   @IsEnum(WorkType, {
-    message: 'Arbeitstyp muss phone, remote oder onsite sein',
+    message: 'Arbeitstyp muss phone, remote, onsite oder travel sein',
   })
   workType!: WorkType;
 }

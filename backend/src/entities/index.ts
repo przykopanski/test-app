@@ -9,3 +9,5 @@ export { TimeEntry, WorkType } from './time-entry.entity.js';
 export { SystemSetting } from './system-setting.entity.js';
 export { VatRate } from './vat-rate.entity.js';
 export { TicketMaterial } from './ticket-material.entity.js';
+export { ServiceReport, ServiceReportStatus } from './service-report.entity.js';
+export { ServiceReportUnlock } from './service-report-unlock.entity.js';

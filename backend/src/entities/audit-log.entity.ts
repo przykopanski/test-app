@@ -24,6 +24,10 @@ export enum AuditAction {
   TIME_ENTRY_UPDATED = 'zeiteintrag_aktualisiert',
   TIME_ENTRY_CREATED = 'zeiteintrag_erstellt',
   TIME_ENTRY_DELETED = 'zeiteintrag_geloescht',
+  SERVICE_REPORT_CREATED = 'einsatzbericht_erstellt',
+  SERVICE_REPORT_UPDATED = 'einsatzbericht_aktualisiert',
+  SERVICE_REPORT_FINALIZED = 'einsatzbericht_finalisiert',
+  SERVICE_REPORT_UNLOCKED = 'einsatzbericht_entsperrt',
 }
 
 @Entity('audit_log')

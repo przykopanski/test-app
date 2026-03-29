@@ -1,4 +1,4 @@
-import { IsUUID, IsEnum, IsString, MinLength, IsDateString } from 'class-validator';
+import { IsUUID, IsEnum, IsString, MinLength, IsDateString, IsOptional, IsNumber, Min } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { WorkType } from '../../entities/time-entry.entity.js';
 
@@ -7,7 +7,7 @@ export class CreateManualEntryDto {
   ticketId!: string;
 
   @IsEnum(WorkType, {
-    message: 'Arbeitstyp muss phone, remote oder onsite sein',
+    message: 'Arbeitstyp muss phone, remote, onsite oder travel sein',
   })
   workType!: WorkType;
 
@@ -23,4 +23,10 @@ export class CreateManualEntryDto {
     message: 'Beschreibung muss mindestens 10 Zeichen lang sein',
   })
   description!: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Kilometer muss eine Zahl sein' })
+  @Min(0, { message: 'Kilometer darf nicht negativ sein' })
+  @Transform(({ value }) => value !== undefined && value !== null ? Number(value) : undefined)
+  distanceKm?: number;
 }

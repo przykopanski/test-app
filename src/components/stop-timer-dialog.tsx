@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, Square, AlertTriangle } from "lucide-react"
+import { Loader2, Square, AlertTriangle, Car } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
@@ -46,12 +47,16 @@ export function StopTimerDialog({
 }: StopTimerDialogProps) {
   const { elapsedSecondsMap, removeActiveTimer, notifyTimerStopped } = useTimer()
   const [description, setDescription] = React.useState("")
+  const [distanceKm, setDistanceKm] = React.useState("")
+  const [showZeroKmWarning, setShowZeroKmWarning] = React.useState(false)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   // Reset on open
   React.useEffect(() => {
     if (open) {
       setDescription("")
+      setDistanceKm("")
+      setShowZeroKmWarning(false)
     }
   }, [open])
 
@@ -62,13 +67,22 @@ export function StopTimerDialog({
   const isLongSession = elapsedSeconds > EIGHT_HOURS_SECONDS
   const isShortSession = elapsedSeconds < THIRTY_SECONDS
   const isDescriptionValid = description.trim().length >= 10
+  const isTravel = timer.workType === "travel"
+  const parsedKm = parseFloat(distanceKm.replace(",", "."))
+  const isKmValid = !isTravel || (!isNaN(parsedKm) && parsedKm >= 0)
 
   async function handleStop() {
-    if (!timer || !isDescriptionValid) return
+    if (!timer || !isDescriptionValid || !isKmValid) return
+
+    // Zero km confirmation for travel
+    if (isTravel && parsedKm === 0 && !showZeroKmWarning) {
+      setShowZeroKmWarning(true)
+      return
+    }
 
     setIsSubmitting(true)
     try {
-      await stopTimer(timer.id, description.trim())
+      await stopTimer(timer.id, description.trim(), isTravel ? parsedKm : undefined)
       removeActiveTimer(timer.id)
       notifyTimerStopped()
       toast.success("Timer gestoppt und Zeiteintrag gespeichert")
@@ -147,6 +161,41 @@ export function StopTimerDialog({
             </div>
           )}
 
+          {/* Kilometer input for travel */}
+          {isTravel && (
+            <div className="space-y-2">
+              <Label htmlFor="timer-distance">
+                <Car className="mr-1 inline h-4 w-4" />
+                Gefahrene Kilometer (Pflichtfeld)
+              </Label>
+              <Input
+                id="timer-distance"
+                type="text"
+                inputMode="decimal"
+                placeholder="z.B. 23,5"
+                value={distanceKm}
+                onChange={(e) => {
+                  setDistanceKm(e.target.value)
+                  setShowZeroKmWarning(false)
+                }}
+                aria-label="Gefahrene Kilometer"
+              />
+              {distanceKm && isNaN(parsedKm) && (
+                <p className="text-xs text-destructive">
+                  Bitte geben Sie eine gueltige Zahl ein.
+                </p>
+              )}
+              {showZeroKmWarning && (
+                <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+                  <p className="text-sm text-orange-700 dark:text-orange-300">
+                    Wirklich 0 km? Klicken Sie erneut auf &quot;Timer stoppen&quot; um zu bestaetigen.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="timer-description">
@@ -175,7 +224,7 @@ export function StopTimerDialog({
           <Button
             variant="destructive"
             onClick={handleStop}
-            disabled={!isDescriptionValid || isSubmitting}
+            disabled={!isDescriptionValid || !isKmValid || isSubmitting}
           >
             {isSubmitting ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

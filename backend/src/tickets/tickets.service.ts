@@ -13,6 +13,8 @@ import {
 import { TicketNote } from '../entities/ticket-note.entity.js';
 import { Contact } from '../entities/contact.entity.js';
 import { AuditLog, AuditAction } from '../entities/audit-log.entity.js';
+import { TimeEntry } from '../entities/time-entry.entity.js';
+import { ServiceReport, ServiceReportStatus } from '../entities/service-report.entity.js';
 import { CreateTicketDto } from './dto/create-ticket.dto.js';
 import { UpdateTicketDto } from './dto/update-ticket.dto.js';
 import { CreateNoteDto } from './dto/create-note.dto.js';
@@ -30,6 +32,10 @@ export class TicketsService {
     private auditRepo: Repository<AuditLog>,
     @InjectRepository(Contact)
     private contactsRepo: Repository<Contact>,
+    @InjectRepository(TimeEntry)
+    private timeEntriesRepo: Repository<TimeEntry>,
+    @InjectRepository(ServiceReport)
+    private serviceReportsRepo: Repository<ServiceReport>,
   ) {}
 
   // Valid status transitions (excluding closed — handled by close endpoint)
@@ -302,6 +308,22 @@ export class TicketsService {
 
     if (ticket.status === TicketStatus.CLOSED) {
       throw new BadRequestException('Ticket ist bereits geschlossen');
+    }
+
+    // Check if ticket has onsite/travel entries but no finalized report
+    const onsiteEntryCount = await this.timeEntriesRepo
+      .createQueryBuilder('te')
+      .where('te.ticketId = :id', { id })
+      .andWhere('te.workType IN (:...types)', { types: ['onsite', 'travel'] })
+      .getCount();
+
+    if (onsiteEntryCount > 0) {
+      const report = await this.serviceReportsRepo.findOne({ where: { ticketId: id } });
+      if (!report || report.status !== ServiceReportStatus.COMPLETED) {
+        throw new BadRequestException(
+          'Ticket hat Vor-Ort-Zeiteintraege, aber keinen finalisierten Einsatzbericht. Bitte zuerst den Bericht abschliessen.',
+        );
+      }
     }
 
     // Create closing note

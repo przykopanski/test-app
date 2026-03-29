@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -32,6 +32,8 @@ interface TicketCloseDialogProps {
   onOpenChange: (open: boolean) => void
   ticketNumber: number
   onConfirm: (closingNote: string) => Promise<void>
+  hasOnsiteEntries?: boolean
+  hasCompletedReport?: boolean
 }
 
 export function TicketCloseDialog({
@@ -39,7 +41,10 @@ export function TicketCloseDialog({
   onOpenChange,
   ticketNumber,
   onConfirm,
+  hasOnsiteEntries = false,
+  hasCompletedReport = false,
 }: TicketCloseDialogProps) {
+  const showReportWarning = hasOnsiteEntries && !hasCompletedReport
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
   const form = useForm<TicketCloseValues>({
@@ -78,6 +83,17 @@ export function TicketCloseDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {showReportWarning && (
+          <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+            <p className="text-sm text-orange-700 dark:text-orange-300">
+              Es gibt Vor-Ort-Zeiteintraege, aber kein finalisierter
+              Einsatzbericht. Bitte erstellen und finalisieren Sie den Bericht,
+              bevor Sie das Ticket schliessen.
+            </p>
+          </div>
+        )}
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <FormField
@@ -107,7 +123,7 @@ export function TicketCloseDialog({
               >
                 Abbrechen
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || showReportWarning}>
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}

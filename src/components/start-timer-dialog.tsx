@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, Play, Phone, Monitor, MapPin } from "lucide-react"
+import { Loader2, Play, Phone, Monitor, MapPin, Car } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,7 @@ const WORK_TYPE_ICONS: Record<WorkType, React.ReactNode> = {
   phone: <Phone className="h-4 w-4" />,
   remote: <Monitor className="h-4 w-4" />,
   onsite: <MapPin className="h-4 w-4" />,
+  travel: <Car className="h-4 w-4" />,
 }
 
 export function StartTimerDialog({
@@ -94,9 +95,9 @@ export function StartTimerDialog({
               <RadioGroup
                 value={workType}
                 onValueChange={(v) => setWorkType(v as WorkType)}
-                className="grid grid-cols-3 gap-3"
+                className="grid grid-cols-2 gap-3 sm:grid-cols-4"
               >
-                {(["phone", "remote", "onsite"] as const).map((type) => (
+                {(["phone", "remote", "onsite", "travel"] as const).map((type) => (
                   <div key={type}>
                     <RadioGroupItem
                       value={type}

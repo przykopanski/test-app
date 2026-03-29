@@ -10,6 +10,7 @@ import { TimeEntriesModule } from './time-entries/time-entries.module.js';
 import { SystemSettingsModule } from './system-settings/system-settings.module.js';
 import { VatRatesModule } from './vat-rates/vat-rates.module.js';
 import { MaterialsModule } from './materials/materials.module.js';
+import { ServiceReportsModule } from './service-reports/service-reports.module.js';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { MaterialsModule } from './materials/materials.module.js';
     SystemSettingsModule,
     VatRatesModule,
     MaterialsModule,
+    ServiceReportsModule,
   ],
 })
 export class AppModule {}

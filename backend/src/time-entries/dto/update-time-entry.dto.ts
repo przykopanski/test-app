@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsInt, Min, MinLength } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsNumber, Min, MinLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateTimeEntryDto {
@@ -17,4 +17,10 @@ export class UpdateTimeEntryDto {
   @MinLength(1, { message: 'Override-Notiz ist erforderlich wenn abrechenbare Minuten geaendert werden' })
   @IsOptional()
   overrideNote?: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Kilometer muss eine Zahl sein' })
+  @Min(0, { message: 'Kilometer darf nicht negativ sein' })
+  @Transform(({ value }) => value !== undefined && value !== null ? Number(value) : undefined)
+  distanceKm?: number;
 }

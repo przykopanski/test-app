@@ -2,7 +2,7 @@ import { apiFetch } from "@/lib/auth"
 
 // --- Types ---
 
-export type WorkType = "phone" | "remote" | "onsite"
+export type WorkType = "phone" | "remote" | "onsite" | "travel"
 
 export interface TimeEntry {
   id: string
@@ -17,6 +17,7 @@ export interface TimeEntry {
   description: string | null
   billableOverride: boolean
   overrideNote: string | null
+  distanceKm: number | null
   technician: {
     id: string
     firstName: string
@@ -36,15 +37,17 @@ export const WORK_TYPE_LABELS: Record<WorkType, string> = {
   phone: "Telefon",
   remote: "Remote",
   onsite: "Vor-Ort",
+  travel: "Fahrzeit",
 }
 
 export const WORK_TYPE_COLORS: Record<WorkType, string> = {
   phone: "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300",
   remote: "bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300",
   onsite: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
+  travel: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
 }
 
-export const ALL_WORK_TYPES: WorkType[] = ["phone", "remote", "onsite"]
+export const ALL_WORK_TYPES: WorkType[] = ["phone", "remote", "onsite", "travel"]
 
 // --- Rounding Logic ---
 
@@ -87,10 +90,13 @@ export async function startTimer(ticketId: string, workType: WorkType): Promise<
   return res.json()
 }
 
-export async function stopTimer(id: string, description: string): Promise<TimeEntry> {
+export async function stopTimer(id: string, description: string, distanceKm?: number): Promise<TimeEntry> {
+  const payload: { description: string; distanceKm?: number } = { description }
+  if (distanceKm !== undefined) payload.distanceKm = distanceKm
+
   const res = await apiFetch(`/time-entries/${id}/stop`, {
     method: "POST",
-    body: JSON.stringify({ description }),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
@@ -149,7 +155,7 @@ export async function fetchTodayTimeEntries(technicianId: string): Promise<TimeE
 
 export async function updateTimeEntry(
   id: string,
-  data: { description?: string; billableMinutes?: number; overrideNote?: string }
+  data: { description?: string; billableMinutes?: number; overrideNote?: string; distanceKm?: number }
 ): Promise<TimeEntry> {
   const res = await apiFetch(`/time-entries/${id}`, {
     method: "PATCH",

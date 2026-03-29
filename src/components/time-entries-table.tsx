@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Pencil, Trash2, AlertCircle, Clock, Loader2 } from "lucide-react"
+import { Pencil, Trash2, AlertCircle, AlertTriangle, Clock, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -60,9 +60,10 @@ import {
 
 interface TimeEntriesTableProps {
   ticketId: string
+  serviceReportStatus?: "draft" | "completed" | null
 }
 
-export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
+export function TimeEntriesTable({ ticketId, serviceReportStatus }: TimeEntriesTableProps) {
   const { hasRole } = useAuth()
   const isAdmin = hasRole("admin")
   const { timerStoppedVersion } = useTimer()
@@ -75,6 +76,7 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
   const [editEntry, setEditEntry] = React.useState<TimeEntry | null>(null)
   const [editDescription, setEditDescription] = React.useState("")
   const [editBillableMinutes, setEditBillableMinutes] = React.useState("")
+  const [editDistanceKm, setEditDistanceKm] = React.useState("")
   const [editOverrideNote, setEditOverrideNote] = React.useState("")
   const [isEditing, setIsEditing] = React.useState(false)
 
@@ -111,6 +113,7 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
     setEditEntry(entry)
     setEditDescription(entry.description ?? "")
     setEditBillableMinutes(String(entry.billableMinutes ?? ""))
+    setEditDistanceKm(entry.distanceKm != null ? String(entry.distanceKm) : "")
     setEditOverrideNote("")
   }
 
@@ -128,13 +131,19 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
 
     setIsEditing(true)
     try {
-      const payload: { description?: string; billableMinutes?: number; overrideNote?: string } = {}
+      const payload: { description?: string; billableMinutes?: number; overrideNote?: string; distanceKm?: number } = {}
       if (editDescription.trim() !== editEntry.description) {
         payload.description = editDescription.trim()
       }
       if (billableChanged) {
         payload.billableMinutes = newBillable
         payload.overrideNote = editOverrideNote.trim()
+      }
+      if (editEntry.workType === "travel" && editDistanceKm !== "") {
+        const newKm = parseFloat(editDistanceKm.replace(",", "."))
+        if (!isNaN(newKm) && newKm !== editEntry.distanceKm) {
+          payload.distanceKm = newKm
+        }
       }
 
       await updateTimeEntry(editEntry.id, payload)
@@ -237,6 +246,14 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {serviceReportStatus === "completed" && (
+            <div className="mb-4 flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950">
+              <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+              <p className="text-sm text-orange-700 dark:text-orange-300">
+                Der Einsatzbericht ist bereits abgeschlossen. Neue Zeiteintraege werden nicht im Bericht beruecksichtigt.
+              </p>
+            </div>
+          )}
           {entries.length === 0 ? (
             <div className="flex flex-col items-center py-8 text-center">
               <Clock className="h-8 w-8 text-muted-foreground/50" />
@@ -252,6 +269,7 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
                     <TableHead>Datum</TableHead>
                     <TableHead className="hidden sm:table-cell">Techniker</TableHead>
                     <TableHead>Typ</TableHead>
+                    <TableHead className="hidden md:table-cell">km</TableHead>
                     <TableHead className="hidden md:table-cell">Rohzeit</TableHead>
                     <TableHead>Abrechenbar</TableHead>
                     <TableHead className="hidden lg:table-cell">Beschreibung</TableHead>
@@ -278,6 +296,11 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
                         >
                           {WORK_TYPE_LABELS[entry.workType]}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm">
+                        {entry.workType === "travel" && entry.distanceKm != null
+                          ? `${entry.distanceKm.toLocaleString("de-DE")} km`
+                          : "--"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell font-mono text-sm">
                         {entry.isRunning ? (
@@ -364,6 +387,26 @@ export function TimeEntriesTable({ ticketId }: TimeEntriesTableProps) {
                   </p>
                 )}
               </div>
+
+              {editEntry.workType === "travel" && (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-distance">Kilometer</Label>
+                  <Input
+                    id="edit-distance"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="z.B. 23,5"
+                    value={editDistanceKm}
+                    onChange={(e) => setEditDistanceKm(e.target.value)}
+                    disabled={serviceReportStatus === "completed"}
+                  />
+                  {serviceReportStatus === "completed" && (
+                    <p className="text-xs text-muted-foreground">
+                      Kilometer gesperrt — Einsatzbericht ist abgeschlossen.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="edit-billable">Abrechenbare Minuten</Label>
