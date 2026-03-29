@@ -7,3 +7,5 @@ export { Ticket, TicketPriority, TicketStatus } from './ticket.entity.js';
 export { TicketNote } from './ticket-note.entity.js';
 export { TimeEntry, WorkType } from './time-entry.entity.js';
 export { SystemSetting } from './system-setting.entity.js';
+export { VatRate } from './vat-rate.entity.js';
+export { TicketMaterial } from './ticket-material.entity.js';

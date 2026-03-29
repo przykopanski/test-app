@@ -8,6 +8,8 @@ import { CustomersModule } from './customers/customers.module.js';
 import { TicketsModule } from './tickets/tickets.module.js';
 import { TimeEntriesModule } from './time-entries/time-entries.module.js';
 import { SystemSettingsModule } from './system-settings/system-settings.module.js';
+import { VatRatesModule } from './vat-rates/vat-rates.module.js';
+import { MaterialsModule } from './materials/materials.module.js';
 
 @Module({
   imports: [
@@ -37,6 +39,8 @@ import { SystemSettingsModule } from './system-settings/system-settings.module.j
     TicketsModule,
     TimeEntriesModule,
     SystemSettingsModule,
+    VatRatesModule,
+    MaterialsModule,
   ],
 })
 export class AppModule {}

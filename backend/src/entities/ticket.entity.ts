@@ -12,6 +12,7 @@ import { User } from './user.entity.js';
 import { Customer } from './customer.entity.js';
 import { Contact } from './contact.entity.js';
 import { TicketNote } from './ticket-note.entity.js';
+import { TicketMaterial } from './ticket-material.entity.js';
 
 export enum TicketPriority {
   LOW = 'low',
@@ -90,4 +91,7 @@ export class Ticket {
 
   @OneToMany(() => TicketNote, (note) => note.ticket, { cascade: true })
   notes!: TicketNote[];
+
+  @OneToMany(() => TicketMaterial, (material) => material.ticket, { cascade: true })
+  materials!: TicketMaterial[];
 }

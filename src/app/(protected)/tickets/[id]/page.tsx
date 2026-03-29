@@ -39,6 +39,7 @@ import { TicketFormSheet } from "@/components/ticket-form-sheet"
 import { TicketCloseDialog } from "@/components/ticket-close-dialog"
 import { StartTimerDialog } from "@/components/start-timer-dialog"
 import { TimeEntriesTable } from "@/components/time-entries-table"
+import { MaterialList } from "@/components/material-list"
 import { useTimer } from "@/components/timer-context"
 import { useAuth } from "@/components/auth-provider"
 
@@ -376,6 +377,9 @@ export default function TicketDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* Material (PROJ-12) */}
+          <MaterialList ticketId={ticketId} ticketStatus={ticket.status} />
 
           {/* Time entries (PROJ-4) */}
           <TimeEntriesTable ticketId={ticketId} />

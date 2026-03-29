@@ -24,7 +24,7 @@
 | PROJ-10 | Integration Adapter System | Planned | [PROJ-10-integration-adapter-system.md](PROJ-10-integration-adapter-system.md) | 2026-03-26 |
 
 | PROJ-11 | Multi-Timer (Parallele Zeiterfassung) | Deployed | [PROJ-11-multi-timer.md](PROJ-11-multi-timer.md) | 2026-03-27 |
-| PROJ-12 | Ticket Material Tracking | In Progress | [PROJ-12-ticket-material-tracking.md](PROJ-12-ticket-material-tracking.md) | 2026-03-29 |
+| PROJ-12 | Ticket Material Tracking | In Review | [PROJ-12-ticket-material-tracking.md](PROJ-12-ticket-material-tracking.md) | 2026-03-29 |
 
 <!-- Add features above this line -->
 

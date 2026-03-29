@@ -10,6 +10,7 @@ import {
   LogOut,
   Building2,
   CalendarDays,
+  Percent,
 } from "lucide-react"
 
 import { useAuth } from "@/components/auth-provider"
@@ -75,6 +76,12 @@ const adminNavItems: NavItem[] = [
     title: "Benutzerverwaltung",
     href: "/admin/users",
     icon: Users,
+    roles: ["admin"],
+  },
+  {
+    title: "MwSt.-Saetze",
+    href: "/admin/vat-rates",
+    icon: Percent,
     roles: ["admin"],
   },
 ]
