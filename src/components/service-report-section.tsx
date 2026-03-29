@@ -504,15 +504,7 @@ export function ServiceReportSection({
                   Entwurf speichern
                 </Button>
                 <Button
-                  onClick={() => {
-                    if (!description.trim()) {
-                      toast.error(
-                        "Bitte geben Sie eine Arbeitsbeschreibung ein."
-                      )
-                      return
-                    }
-                    setShowSignatureDialog(true)
-                  }}
+                  onClick={() => setShowSignatureDialog(true)}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
                   Bericht finalisieren

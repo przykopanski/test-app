@@ -10,7 +10,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { TimeEntry } from '../entities/time-entry.entity.js';
-import { Ticket } from '../entities/ticket.entity.js';
+import { Ticket, TicketStatus } from '../entities/ticket.entity.js';
 import { AuditLog, AuditAction } from '../entities/audit-log.entity.js';
 import { User, UserRole } from '../entities/user.entity.js';
 import { StartTimerDto } from './dto/start-timer.dto.js';
@@ -124,6 +124,12 @@ export class TimeEntriesService implements OnModuleInit {
         );
       }
       throw error;
+    }
+
+    // Auto-transition ticket from open → in_progress
+    if (ticket.status === TicketStatus.OPEN) {
+      ticket.status = TicketStatus.IN_PROGRESS;
+      await this.ticketsRepo.save(ticket);
     }
 
     await this.auditRepo.save({
