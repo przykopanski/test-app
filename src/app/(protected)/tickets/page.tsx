@@ -101,7 +101,7 @@ export default function TicketsPage() {
   // Timer (PROJ-4)
   const { hasActiveTimerForTicket } = useTimer()
   const { hasRole } = useAuth()
-  const isTechnician = hasRole("technician")
+  const isTechnician = hasRole("technician") || hasRole("admin")
   const [timerDialogTicket, setTimerDialogTicket] = React.useState<{ id: string; subject: string } | null>(null)
 
   // Debounce search

@@ -65,7 +65,7 @@ export default function TicketDetailPage() {
 
   const { hasActiveTimerForTicket } = useTimer()
   const { hasRole } = useAuth()
-  const isTechnician = hasRole("technician")
+  const isTechnician = hasRole("technician") || hasRole("admin")
   const [editFormOpen, setEditFormOpen] = React.useState(false)
   const [closeDialogOpen, setCloseDialogOpen] = React.useState(false)
   const [startTimerOpen, setStartTimerOpen] = React.useState(false)
