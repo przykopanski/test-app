@@ -1,6 +1,6 @@
 # PROJ-12: Ticket Material Tracking
 
-## Status: In Review
+## Status: Deployed
 **Created:** 2026-03-29
 **Last Updated:** 2026-03-29
 
@@ -366,4 +366,16 @@ Table, Dialog, Input, Select, Switch, AlertDialog sind bereits installiert.
 - **Recommendation:** Fix BUG-4 first (VatRatesService needs a sanitize step like MaterialsService has), then deploy. BUG-3 and BUG-5 can be addressed in the next sprint.
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed by /deploy on 2026-03-29**
+
+- **Deployment type:** Self-hosted via Docker Compose + Nginx Proxy Manager
+- **Commit:** `b114489` — feat(PROJ-12): Implement Ticket Material Tracking
+- **Git tag:** `v1.12.0-PROJ-12`
+- **Pre-deployment checks:**
+  - Frontend build: PASSED
+  - Backend build: PASSED
+  - Lint: Pre-existing errors only (sidebar.tsx, ticket-form-sheet.tsx — not PROJ-12)
+  - QA: 16/16 acceptance criteria passed, BUG-4 already resolved
+- **Deploy command:** `docker compose up -d --build`
+- **Open issues (next sprint):** BUG-3 (VAT rate delete endpoint), BUG-5 (UX for deactivated VAT rate in edit form)
