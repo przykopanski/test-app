@@ -50,6 +50,23 @@ export class ServiceReport {
   @JoinColumn({ name: 'lockedBy' })
   lockedByUser!: User | null;
 
+  // --- Signature fields (PROJ-7) ---
+
+  @Column({ type: 'text', nullable: true })
+  signatureData!: string | null;
+
+  @Column({ type: 'varchar', nullable: true })
+  signerName!: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  signedAt!: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  signatureRefused!: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  refusalReason!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

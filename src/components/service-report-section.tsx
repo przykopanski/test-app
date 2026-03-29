@@ -12,6 +12,7 @@ import {
   Car,
   AlertTriangle,
   Lock,
+  Ban,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -27,16 +28,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
@@ -50,7 +41,7 @@ import {
 } from "@/lib/time-entries"
 import type { TicketMaterial } from "@/lib/materials"
 import { fetchTicketMaterials, formatEur, calculateGross } from "@/lib/materials"
-import type { ServiceReport } from "@/lib/service-reports"
+import type { ServiceReport, FinalizeData } from "@/lib/service-reports"
 import {
   fetchServiceReport,
   createServiceReport,
@@ -58,6 +49,7 @@ import {
   finalizeServiceReport,
 } from "@/lib/service-reports"
 import { ServiceReportUnlockDialog } from "@/components/service-report-unlock-dialog"
+import { SignatureDialog } from "@/components/signature-dialog"
 
 interface ServiceReportSectionProps {
   ticketId: string
@@ -122,8 +114,7 @@ export function ServiceReportSection({
   const [description, setDescription] = React.useState("")
   const [isSaving, setIsSaving] = React.useState(false)
   const [isCreating, setIsCreating] = React.useState(false)
-  const [showFinalizeConfirm, setShowFinalizeConfirm] = React.useState(false)
-  const [isFinalizing, setIsFinalizing] = React.useState(false)
+  const [showSignatureDialog, setShowSignatureDialog] = React.useState(false)
   const [unlockDialogOpen, setUnlockDialogOpen] = React.useState(false)
 
   const loadData = React.useCallback(async () => {
@@ -194,16 +185,15 @@ export function ServiceReportSection({
     }
   }
 
-  async function handleFinalize() {
-    setIsFinalizing(true)
+  async function handleFinalize(data: FinalizeData) {
     try {
-      // Save description first, then finalize
+      // Save description first, then finalize with signature data
       await updateServiceReport(ticketId, {
         description: description.trim(),
       })
-      const finalized = await finalizeServiceReport(ticketId)
+      const finalized = await finalizeServiceReport(ticketId, data)
       setReport(finalized)
-      setShowFinalizeConfirm(false)
+      setShowSignatureDialog(false)
       toast.success("Einsatzbericht finalisiert")
     } catch (err) {
       toast.error(
@@ -211,8 +201,6 @@ export function ServiceReportSection({
           ? err.message
           : "Bericht konnte nicht finalisiert werden"
       )
-    } finally {
-      setIsFinalizing(false)
     }
   }
 
@@ -440,6 +428,64 @@ export function ServiceReportSection({
             )}
           </div>
 
+          {/* Signature display for completed reports */}
+          {isCompleted && (
+            <>
+              <Separator />
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Unterschrift
+                </p>
+                {report!.signatureRefused ? (
+                  <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 dark:border-orange-800 dark:bg-orange-950">
+                    <div className="flex items-center gap-2 text-sm font-medium text-orange-700 dark:text-orange-300">
+                      <Ban className="h-4 w-4" />
+                      Unterschrift verweigert
+                    </div>
+                    <p className="mt-1 text-sm text-orange-600 dark:text-orange-400">
+                      Grund: {report!.refusalReason}
+                    </p>
+                    {report!.signedAt && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(report!.signedAt).toLocaleDateString("de-DE")}{" "}
+                        {new Date(report!.signedAt).toLocaleTimeString("de-DE", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    )}
+                  </div>
+                ) : report!.signatureData ? (
+                  <div className="space-y-2">
+                    <div className="rounded-lg border bg-white p-2">
+                      <img
+                        src={report!.signatureData}
+                        alt={`Unterschrift von ${report!.signerName}`}
+                        className="mx-auto h-auto max-h-[150px] w-auto max-w-full"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{report!.signerName}</span>
+                      {report!.signedAt && (
+                        <span className="text-muted-foreground">
+                          {new Date(report!.signedAt).toLocaleDateString("de-DE")}{" "}
+                          {new Date(report!.signedAt).toLocaleTimeString("de-DE", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Keine Unterschrift vorhanden.
+                  </p>
+                )}
+              </div>
+            </>
+          )}
+
           {/* Actions */}
           {isDraft && !isClosed && (
             <>
@@ -465,7 +511,7 @@ export function ServiceReportSection({
                       )
                       return
                     }
-                    setShowFinalizeConfirm(true)
+                    setShowSignatureDialog(true)
                   }}
                 >
                   <CheckCircle className="mr-2 h-4 w-4" />
@@ -497,30 +543,12 @@ export function ServiceReportSection({
         </CardContent>
       </Card>
 
-      {/* Finalize confirmation */}
-      <AlertDialog
-        open={showFinalizeConfirm}
-        onOpenChange={setShowFinalizeConfirm}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Bericht finalisieren?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Nach der Finalisierung kann der Bericht nicht mehr bearbeitet
-              werden. Nur ein Admin kann ihn wieder entsperren.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-            <AlertDialogAction onClick={handleFinalize} disabled={isFinalizing}>
-              {isFinalizing && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Finalisieren
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Signature dialog (replaces the old AlertDialog confirmation) */}
+      <SignatureDialog
+        open={showSignatureDialog}
+        onOpenChange={setShowSignatureDialog}
+        onConfirm={handleFinalize}
+      />
 
       {/* Unlock dialog */}
       <ServiceReportUnlockDialog

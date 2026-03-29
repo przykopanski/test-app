@@ -12,6 +12,11 @@ export interface ServiceReport {
   status: ServiceReportStatus
   lockedAt: string | null
   lockedBy: string | null
+  signatureData: string | null
+  signerName: string | null
+  signedAt: string | null
+  signatureRefused: boolean
+  refusalReason: string | null
   createdAt: string
   updatedAt: string
 }
@@ -89,10 +94,25 @@ export async function updateServiceReport(
   return res.json()
 }
 
-export async function finalizeServiceReport(ticketId: string): Promise<ServiceReport> {
+export interface FinalizeSignatureData {
+  signatureData: string
+  signerName: string
+}
+
+export interface FinalizeRefusalData {
+  signatureRefused: true
+  refusalReason: string
+}
+
+export type FinalizeData = FinalizeSignatureData | FinalizeRefusalData
+
+export async function finalizeServiceReport(
+  ticketId: string,
+  data: FinalizeData
+): Promise<ServiceReport> {
   const res = await apiFetch(`/tickets/${ticketId}/service-report`, {
     method: "PATCH",
-    body: JSON.stringify({ status: "completed" }),
+    body: JSON.stringify({ status: "completed", ...data }),
   })
 
   if (!res.ok) {

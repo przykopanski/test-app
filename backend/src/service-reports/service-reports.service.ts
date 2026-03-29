@@ -115,6 +115,50 @@ export class ServiceReportsService {
         );
       }
 
+      // Validate signature data (PROJ-7)
+      const isRefusal = dto.signatureRefused === true;
+
+      if (isRefusal) {
+        // Refusal: require reason, no signature data
+        if (!dto.refusalReason || dto.refusalReason.trim() === '') {
+          throw new BadRequestException(
+            'Verweigerungsgrund ist erforderlich wenn die Unterschrift verweigert wird',
+          );
+        }
+        report.signatureRefused = true;
+        report.refusalReason = dto.refusalReason.trim();
+        report.signatureData = null;
+        report.signerName = null;
+        report.signedAt = new Date();
+      } else {
+        // Signature: require signatureData and signerName
+        if (!dto.signatureData) {
+          throw new BadRequestException(
+            'Unterschrift ist erforderlich um den Bericht zu finalisieren',
+          );
+        }
+        if (!dto.signerName || dto.signerName.trim() === '') {
+          throw new BadRequestException(
+            'Name des Unterzeichners ist erforderlich',
+          );
+        }
+        // Validate base64 data URL format
+        if (
+          (!dto.signatureData.startsWith('data:image/jpeg') &&
+            !dto.signatureData.startsWith('data:image/png')) ||
+          !dto.signatureData.includes(';base64,')
+        ) {
+          throw new BadRequestException(
+            'Unterschrift muss ein gueltiges base64-Bild sein',
+          );
+        }
+        report.signatureData = dto.signatureData;
+        report.signerName = dto.signerName.trim();
+        report.signatureRefused = false;
+        report.refusalReason = null;
+        report.signedAt = new Date();
+      }
+
       report.status = ServiceReportStatus.COMPLETED;
       report.lockedAt = new Date();
       report.lockedBy = userId;
@@ -124,7 +168,11 @@ export class ServiceReportsService {
       await this.auditRepo.save({
         userId,
         action: AuditAction.SERVICE_REPORT_FINALIZED,
-        metadata: { ticketId, serviceReportId: report.id },
+        metadata: {
+          ticketId,
+          serviceReportId: report.id,
+          signatureRefused: isRefusal,
+        },
       });
 
       return this.sanitize(report);
@@ -167,10 +215,15 @@ export class ServiceReportsService {
     });
     await this.unlocksRepo.save(unlock);
 
-    // Reset report to draft
+    // Reset report to draft and clear signature fields
     report.status = ServiceReportStatus.DRAFT;
     report.lockedAt = null;
     report.lockedBy = null;
+    report.signatureData = null;
+    report.signerName = null;
+    report.signedAt = null;
+    report.signatureRefused = false;
+    report.refusalReason = null;
     await this.reportsRepo.save(report);
 
     await this.auditRepo.save({
@@ -232,6 +285,11 @@ export class ServiceReportsService {
       status: report.status,
       lockedAt: report.lockedAt,
       lockedBy: lockedByName,
+      signatureData: report.signatureData,
+      signerName: report.signerName,
+      signedAt: report.signedAt,
+      signatureRefused: report.signatureRefused,
+      refusalReason: report.refusalReason,
       createdAt: report.createdAt,
       updatedAt: report.updatedAt,
     };
