@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Loader2, Play, Phone, Monitor, MapPin, Car } from "lucide-react"
+import { Loader2, Play, Phone, Monitor, MapPin, Car, AlertTriangle } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ interface StartTimerDialogProps {
   onOpenChange: (open: boolean) => void
   ticketId: string
   ticketSubject: string
+  serviceReportStatus?: "draft" | "completed" | null
 }
 
 const WORK_TYPE_ICONS: Record<WorkType, React.ReactNode> = {
@@ -39,6 +40,7 @@ export function StartTimerDialog({
   onOpenChange,
   ticketId,
   ticketSubject,
+  serviceReportStatus,
 }: StartTimerDialogProps) {
   const { hasActiveTimerForTicket, addActiveTimer } = useTimer()
   const [workType, setWorkType] = React.useState<WorkType | "">("")
@@ -78,6 +80,15 @@ export function StartTimerDialog({
             Timer fuer Ticket &quot;{ticketSubject}&quot; starten.
           </DialogDescription>
         </DialogHeader>
+
+        {serviceReportStatus === "completed" && (
+          <div className="flex items-start gap-2 rounded-lg border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+            <p className="text-sm text-orange-700 dark:text-orange-300">
+              Der Einsatzbericht fuer dieses Ticket ist bereits abgeschlossen. Neue Zeiteintraege werden dort nicht angezeigt. Ein Admin muss den Bericht erst entsperren.
+            </p>
+          </div>
+        )}
 
         {hasTimerOnThisTicket ? (
           <div className="rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm dark:border-orange-800 dark:bg-orange-950">

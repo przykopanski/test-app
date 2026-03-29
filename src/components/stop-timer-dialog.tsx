@@ -66,23 +66,25 @@ export function StopTimerDialog({
   const billableMinutes = roundToBillableMinutes(elapsedSeconds)
   const isLongSession = elapsedSeconds > EIGHT_HOURS_SECONDS
   const isShortSession = elapsedSeconds < THIRTY_SECONDS
-  const isDescriptionValid = description.trim().length >= 10
   const isTravel = timer.workType === "travel"
+  const isDescriptionValid = isTravel || description.trim().length >= 10
   const parsedKm = parseFloat(distanceKm.replace(",", "."))
-  const isKmValid = !isTravel || (!isNaN(parsedKm) && parsedKm >= 0)
+  const isKmValid = !isTravel || distanceKm === "" || (!isNaN(parsedKm) && parsedKm >= 0)
 
   async function handleStop() {
     if (!timer || !isDescriptionValid || !isKmValid) return
 
+    const hasKm = isTravel && distanceKm !== "" && !isNaN(parsedKm)
+
     // Zero km confirmation for travel
-    if (isTravel && parsedKm === 0 && !showZeroKmWarning) {
+    if (hasKm && parsedKm === 0 && !showZeroKmWarning) {
       setShowZeroKmWarning(true)
       return
     }
 
     setIsSubmitting(true)
     try {
-      await stopTimer(timer.id, description.trim(), isTravel ? parsedKm : undefined)
+      await stopTimer(timer.id, description.trim(), hasKm ? parsedKm : undefined)
       removeActiveTimer(timer.id)
       notifyTimerStopped()
       toast.success("Timer gestoppt und Zeiteintrag gespeichert")
@@ -166,7 +168,7 @@ export function StopTimerDialog({
             <div className="space-y-2">
               <Label htmlFor="timer-distance">
                 <Car className="mr-1 inline h-4 w-4" />
-                Gefahrene Kilometer (Pflichtfeld)
+                Gefahrene Kilometer (optional)
               </Label>
               <Input
                 id="timer-distance"
@@ -180,9 +182,14 @@ export function StopTimerDialog({
                 }}
                 aria-label="Gefahrene Kilometer"
               />
-              {distanceKm && isNaN(parsedKm) && (
+              {distanceKm !== "" && isNaN(parsedKm) && (
                 <p className="text-xs text-destructive">
                   Bitte geben Sie eine gueltige Zahl ein.
+                </p>
+              )}
+              {distanceKm === "" && (
+                <p className="text-xs text-muted-foreground">
+                  Km kann auch nachtraeglich eingetragen werden.
                 </p>
               )}
               {showZeroKmWarning && (
@@ -199,17 +206,19 @@ export function StopTimerDialog({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="timer-description">
-              Beschreibung (Pflichtfeld, min. 10 Zeichen)
+              {isTravel
+                ? "Bemerkung (optional, z.B. Stau, Umleitung)"
+                : "Beschreibung (Pflichtfeld, min. 10 Zeichen)"}
             </Label>
             <Textarea
               id="timer-description"
-              placeholder="Was haben Sie gemacht?"
+              placeholder={isTravel ? "z.B. Stau auf A1, Umleitung ueber B3..." : "Was haben Sie gemacht?"}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[100px]"
+              className={isTravel ? "min-h-[60px]" : "min-h-[100px]"}
               aria-label="Taetigkeitsbeschreibung"
             />
-            {description.length > 0 && description.trim().length < 10 && (
+            {!isTravel && description.length > 0 && description.trim().length < 10 && (
               <p className="text-xs text-destructive">
                 Noch {10 - description.trim().length} Zeichen erforderlich.
               </p>

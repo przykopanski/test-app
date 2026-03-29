@@ -349,28 +349,55 @@ export function ServiceReportSection({
                 {grouped.map((group) => (
                   <div
                     key={group.workType}
-                    className="flex items-center justify-between rounded-lg border p-3"
+                    className="rounded-lg border"
                   >
-                    <div className="flex items-center gap-2">
-                      {WORK_TYPE_ICONS[group.workType]}
-                      <span className="text-sm font-medium">
-                        {WORK_TYPE_LABELS[group.workType]}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        ({group.entries.length}{" "}
-                        {group.entries.length === 1 ? "Eintrag" : "Eintraege"})
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm">
-                      <span className="font-medium">
-                        {formatMinutes(group.totalMinutes)}
-                      </span>
-                      {group.workType === "travel" && (
-                        <span className="text-muted-foreground">
-                          {group.totalKm.toLocaleString("de-DE")} km
+                    <div className="flex items-center justify-between p-3">
+                      <div className="flex items-center gap-2">
+                        {WORK_TYPE_ICONS[group.workType]}
+                        <span className="text-sm font-medium">
+                          {WORK_TYPE_LABELS[group.workType]}
                         </span>
-                      )}
+                        <span className="text-xs text-muted-foreground">
+                          ({group.entries.length}{" "}
+                          {group.entries.length === 1 ? "Eintrag" : "Eintraege"})
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm">
+                        <span className="font-medium">
+                          {formatMinutes(group.totalMinutes)}
+                        </span>
+                        {group.workType === "travel" && (
+                          <span className="font-medium">
+                            {group.totalKm.toLocaleString("de-DE")} km
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    {group.workType === "travel" && group.entries.length > 0 && (
+                      <div className="border-t px-3 pb-3 pt-2">
+                        {group.entries.map((entry) => (
+                          <div
+                            key={entry.id}
+                            className="flex items-center justify-between py-1 text-xs text-muted-foreground"
+                          >
+                            <span>
+                              {new Date(entry.startedAt).toLocaleDateString("de-DE")}{" "}
+                              {new Date(entry.startedAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
+                              {" – "}
+                              {entry.stoppedAt
+                                ? new Date(entry.stoppedAt).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })
+                                : "–"}
+                            </span>
+                            <div className="flex items-center gap-3">
+                              <span>{formatMinutes(entry.billableMinutes ?? 0)}</span>
+                              <span className="font-medium text-foreground">
+                                {(entry.distanceKm ?? 0).toLocaleString("de-DE")} km
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -163,6 +163,11 @@ export class TimeEntriesService implements OnModuleInit {
       );
     }
 
+    // Description is required for non-travel entries
+    if (entry.workType !== 'travel' && (!dto.description || dto.description.trim().length < 10)) {
+      throw new BadRequestException('Beschreibung muss mindestens 10 Zeichen lang sein');
+    }
+
     const now = new Date();
     const rawSeconds = Math.floor(
       (now.getTime() - entry.startedAt.getTime()) / 1000,
@@ -173,7 +178,7 @@ export class TimeEntriesService implements OnModuleInit {
     entry.isRunning = false;
     entry.rawSeconds = rawSeconds;
     entry.billableMinutes = billableMinutes;
-    entry.description = dto.description;
+    entry.description = dto.description || null;
 
     // Save distance for travel entries
     if (dto.distanceKm !== undefined) {

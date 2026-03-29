@@ -532,6 +532,7 @@ export default function TicketDetailPage() {
         onOpenChange={setStartTimerOpen}
         ticketId={ticketId}
         ticketSubject={ticket.subject}
+        serviceReportStatus={reportStatus}
       />
     </div>
   )
