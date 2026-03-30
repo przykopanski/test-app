@@ -11,8 +11,11 @@ import {
   Building2,
   CalendarDays,
   Percent,
+  Moon,
+  Sun,
 } from "lucide-react"
 
+import { useTheme } from "next-themes"
 import { useAuth } from "@/components/auth-provider"
 import { ROLE_LABELS } from "@/lib/auth"
 import type { UserRole } from "@/lib/auth"
@@ -89,6 +92,7 @@ const adminNavItems: NavItem[] = [
 export function AppSidebar() {
   const { user, logout, hasRole } = useAuth()
   const pathname = usePathname()
+  const { theme, setTheme } = useTheme()
 
   if (!user) return null
 
@@ -190,6 +194,15 @@ export function AppSidebar() {
                     <User className="mr-2 h-4 w-4" />
                     Profil
                   </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                  {theme === "dark" ? (
+                    <Sun className="mr-2 h-4 w-4" />
+                  ) : (
+                    <Moon className="mr-2 h-4 w-4" />
+                  )}
+                  {theme === "dark" ? "Heller Modus" : "Dunkler Modus"}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={logout}>
