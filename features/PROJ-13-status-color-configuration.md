@@ -1,6 +1,6 @@
 # PROJ-13: Status & Priority Color Configuration
 
-## Status: In Progress
+## Status: Deployed
 **Created:** 2026-03-30
 **Last Updated:** 2026-03-30
 
@@ -278,4 +278,7 @@ No new npm packages — uses existing shadcn/ui Badge, React Context, and `api.t
 - **Recommendation:** Deploy. Die 3 Low-Priority Bugs koennen im naechsten Sprint behoben werden.
 
 ## Deployment
-_To be added by /deploy_
+
+**Deployed:** 2026-03-30
+**Commit:** 2dc9f8b
+**Notes:** No DB migration needed — colors auto-seeded by `seedDefaults()` on backend startup. Docker Compose rebuild of `frontend` + `backend` services required.
