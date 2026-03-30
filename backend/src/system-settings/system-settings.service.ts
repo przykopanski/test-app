@@ -20,6 +20,53 @@ const DEFAULT_SETTINGS: DefaultSetting[] = [
     value: 30,
     description: 'Mindestdauer in Minuten, ab der eine Luecke zwischen Zeiteintraegen angezeigt wird',
   },
+  // Ticket status color defaults
+  {
+    key: 'ticket_status_color_open',
+    value: 'green',
+    description: 'Farbe fuer Ticket-Status: Offen',
+  },
+  {
+    key: 'ticket_status_color_in_progress',
+    value: 'blue',
+    description: 'Farbe fuer Ticket-Status: In Bearbeitung',
+  },
+  {
+    key: 'ticket_status_color_resolved',
+    value: 'purple',
+    description: 'Farbe fuer Ticket-Status: Geloest',
+  },
+  {
+    key: 'ticket_status_color_closed',
+    value: 'gray',
+    description: 'Farbe fuer Ticket-Status: Geschlossen',
+  },
+  {
+    key: 'ticket_status_color_on_hold',
+    value: 'yellow',
+    description: 'Farbe fuer Ticket-Status: On Hold',
+  },
+  // Ticket priority color defaults
+  {
+    key: 'ticket_priority_color_low',
+    value: 'slate',
+    description: 'Farbe fuer Ticket-Prioritaet: Niedrig',
+  },
+  {
+    key: 'ticket_priority_color_medium',
+    value: 'blue',
+    description: 'Farbe fuer Ticket-Prioritaet: Mittel',
+  },
+  {
+    key: 'ticket_priority_color_high',
+    value: 'orange',
+    description: 'Farbe fuer Ticket-Prioritaet: Hoch',
+  },
+  {
+    key: 'ticket_priority_color_critical',
+    value: 'red',
+    description: 'Farbe fuer Ticket-Prioritaet: Kritisch',
+  },
 ];
 
 @Injectable()
@@ -74,6 +121,33 @@ export class SystemSettingsService implements OnModuleInit {
    */
   async getAll(): Promise<SystemSetting[]> {
     return this.settingsRepo.find({ order: { key: 'ASC' } });
+  }
+
+  /**
+   * Get all color settings as a flat key-value map.
+   * Returns only keys matching ticket_status_color_* and ticket_priority_color_*.
+   */
+  async getColorSettings(): Promise<Record<string, string>> {
+    const allSettings = await this.settingsRepo.find({
+      order: { key: 'ASC' },
+    });
+
+    const result: Record<string, string> = {};
+    for (const setting of allSettings) {
+      if (
+        setting.key.startsWith('ticket_status_color_') ||
+        setting.key.startsWith('ticket_priority_color_')
+      ) {
+        try {
+          // Values are stored JSON-serialized (e.g. '"green"'), parse to get plain string
+          const parsed = JSON.parse(setting.value);
+          result[setting.key] = typeof parsed === 'string' ? parsed : setting.value;
+        } catch {
+          result[setting.key] = setting.value;
+        }
+      }
+    }
+    return result;
   }
 
   /**

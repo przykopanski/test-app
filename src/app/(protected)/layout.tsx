@@ -3,6 +3,7 @@
 import * as React from "react"
 import { AuthProvider, useAuth } from "@/components/auth-provider"
 import { TimerProvider } from "@/components/timer-context"
+import { ColorSettingsProvider } from "@/hooks/useColorSettings"
 import { ActiveTimerBar } from "@/components/active-timer-bar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
@@ -28,6 +29,7 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
+    <ColorSettingsProvider>
     <TimerProvider>
       <SidebarProvider>
         <AppSidebar />
@@ -41,6 +43,7 @@ function ProtectedContent({ children }: { children: React.ReactNode }) {
         </SidebarInset>
       </SidebarProvider>
     </TimerProvider>
+    </ColorSettingsProvider>
   )
 }
 

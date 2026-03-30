@@ -25,8 +25,9 @@ import type { DashboardActiveTimer, DashboardGap, TodayDashboardData, OpenTicket
 import { fetchTodayDashboard, fetchMyOpenTickets } from "@/lib/dashboard"
 import type { TimeEntry } from "@/lib/time-entries"
 import { fetchActiveTimers } from "@/lib/time-entries"
-import { PRIORITY_COLORS, STATUS_LABELS } from "@/lib/tickets"
+import { STATUS_LABELS } from "@/lib/tickets"
 import type { TicketPriority, TicketStatus } from "@/lib/tickets"
+import { useColorSettings } from "@/hooks/useColorSettings"
 
 // Merge server timeline entries with gap indicators for chronological display
 interface TimelineItem {
@@ -53,6 +54,7 @@ function buildTimeline(data: TodayDashboardData): TimelineItem[] {
 
 export default function TodayDashboardPage() {
   const { user } = useAuth()
+  const { getPriorityClasses, getStatusClasses } = useColorSettings()
   const {
     activeTimers: contextTimers,
     elapsedSecondsMap,
@@ -339,11 +341,14 @@ export default function TodayDashboardPage() {
                     <span className="flex-1 text-sm truncate">{ticket.title}</span>
                     <Badge
                       variant="outline"
-                      className={`text-xs ${PRIORITY_COLORS[ticket.priority as TicketPriority] ?? ""}`}
+                      className={`text-xs ${getPriorityClasses(ticket.priority as TicketPriority)}`}
                     >
                       {ticket.priority}
                     </Badge>
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${getStatusClasses(ticket.status as TicketStatus)}`}
+                    >
                       {STATUS_LABELS[ticket.status as TicketStatus] ?? ticket.status}
                     </Badge>
                   </Link>

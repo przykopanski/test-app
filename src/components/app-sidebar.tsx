@@ -11,6 +11,7 @@ import {
   Building2,
   CalendarDays,
   Percent,
+  Palette,
   Moon,
   Sun,
 } from "lucide-react"
@@ -85,6 +86,12 @@ const adminNavItems: NavItem[] = [
     title: "MwSt.-Saetze",
     href: "/admin/vat-rates",
     icon: Percent,
+    roles: ["admin"],
+  },
+  {
+    title: "Farbkonfiguration",
+    href: "/admin/colors",
+    icon: Palette,
     roles: ["admin"],
   },
 ]

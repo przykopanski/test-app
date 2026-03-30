@@ -13,6 +13,12 @@ import { Roles } from '../auth/decorators/roles.decorator.js';
 import { UserRole } from '../entities/index.js';
 import { SystemSettingsService } from './system-settings.service.js';
 
+/** Valid Tailwind color tokens for ticket status/priority badges */
+const VALID_COLOR_TOKENS = [
+  'gray', 'slate', 'red', 'orange', 'yellow',
+  'green', 'teal', 'blue', 'indigo', 'purple', 'pink',
+] as const;
+
 @Controller('admin/settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
@@ -60,6 +66,22 @@ export class SystemSettingsController {
     if (body.value === undefined) {
       throw new BadRequestException('Feld "value" ist erforderlich');
     }
+
+    // Validate color token values for ticket color settings
+    if (
+      key.startsWith('ticket_status_color_') ||
+      key.startsWith('ticket_priority_color_')
+    ) {
+      if (
+        typeof body.value !== 'string' ||
+        !VALID_COLOR_TOKENS.includes(body.value as typeof VALID_COLOR_TOKENS[number])
+      ) {
+        throw new BadRequestException(
+          `Ungueltiger Farbwert "${body.value}". Erlaubt: ${VALID_COLOR_TOKENS.join(', ')}`,
+        );
+      }
+    }
+
     await this.settingsService.set(key, body.value);
     return { key, value: body.value };
   }

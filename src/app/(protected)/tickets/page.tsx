@@ -46,6 +46,7 @@ import { TicketFormSheet } from "@/components/ticket-form-sheet"
 import { StartTimerDialog } from "@/components/start-timer-dialog"
 import { useTimer } from "@/components/timer-context"
 import { useAuth } from "@/components/auth-provider"
+import { useColorSettings } from "@/hooks/useColorSettings"
 
 import type {
   Ticket,
@@ -58,9 +59,7 @@ import {
   fetchTickets,
   createTicket,
   PRIORITY_LABELS,
-  PRIORITY_COLORS,
   STATUS_LABELS,
-  STATUS_COLORS,
   ALL_PRIORITIES,
   ALL_STATUSES,
 } from "@/lib/tickets"
@@ -75,6 +74,7 @@ type SortField = "createdAt" | "priority" | "status"
 type SortOrder = "ASC" | "DESC"
 
 export default function TicketsPage() {
+  const { getStatusClasses, getPriorityClasses } = useColorSettings()
   const [tickets, setTickets] = React.useState<Ticket[]>([])
   const [totalCount, setTotalCount] = React.useState(0)
   const [totalPages, setTotalPages] = React.useState(1)
@@ -424,7 +424,7 @@ export default function TicketsPage() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={PRIORITY_COLORS[ticket.priority]}
+                        className={getPriorityClasses(ticket.priority)}
                       >
                         {PRIORITY_LABELS[ticket.priority]}
                       </Badge>
@@ -432,7 +432,7 @@ export default function TicketsPage() {
                     <TableCell>
                       <Badge
                         variant="outline"
-                        className={STATUS_COLORS[ticket.status]}
+                        className={getStatusClasses(ticket.status)}
                       >
                         {STATUS_LABELS[ticket.status]}
                       </Badge>

@@ -43,6 +43,7 @@ import { MaterialList } from "@/components/material-list"
 import { ServiceReportSection } from "@/components/service-report-section"
 import { useTimer } from "@/components/timer-context"
 import { useAuth } from "@/components/auth-provider"
+import { useColorSettings } from "@/hooks/useColorSettings"
 
 import type { TicketDetail, TicketFormValues } from "@/lib/tickets"
 import {
@@ -51,9 +52,7 @@ import {
   closeTicket,
   addTicketNote,
   PRIORITY_LABELS,
-  PRIORITY_COLORS,
   STATUS_LABELS,
-  STATUS_COLORS,
 } from "@/lib/tickets"
 import { fetchTimeEntries } from "@/lib/time-entries"
 import { fetchServiceReport } from "@/lib/service-reports"
@@ -62,6 +61,7 @@ export default function TicketDetailPage() {
   const params = useParams()
   const router = useRouter()
   const ticketId = params.id as string
+  const { getStatusClasses, getPriorityClasses } = useColorSettings()
 
   const [ticket, setTicket] = React.useState<TicketDetail | null>(null)
   const [isLoading, setIsLoading] = React.useState(true)
@@ -249,13 +249,13 @@ export default function TicketDetailPage() {
             </span>
             <Badge
               variant="outline"
-              className={PRIORITY_COLORS[ticket.priority]}
+              className={getPriorityClasses(ticket.priority)}
             >
               {PRIORITY_LABELS[ticket.priority]}
             </Badge>
             <Badge
               variant="outline"
-              className={STATUS_COLORS[ticket.status]}
+              className={getStatusClasses(ticket.status)}
             >
               {STATUS_LABELS[ticket.status]}
             </Badge>
