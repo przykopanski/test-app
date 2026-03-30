@@ -26,6 +26,8 @@
 | PROJ-11 | Multi-Timer (Parallele Zeiterfassung) | Deployed | [PROJ-11-multi-timer.md](PROJ-11-multi-timer.md) | 2026-03-27 |
 | PROJ-12 | Ticket Material Tracking | Deployed | [PROJ-12-ticket-material-tracking.md](PROJ-12-ticket-material-tracking.md) | 2026-03-29 |
 
+| PROJ-13 | Status & Priority Color Configuration | Planned | [PROJ-13-status-color-configuration.md](PROJ-13-status-color-configuration.md) | 2026-03-30 |
+
 <!-- Add features above this line -->
 
-## Next Available ID: PROJ-13
+## Next Available ID: PROJ-14
