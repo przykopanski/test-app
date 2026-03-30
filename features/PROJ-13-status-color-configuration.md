@@ -1,6 +1,6 @@
 # PROJ-13: Status & Priority Color Configuration
 
-## Status: Planned
+## Status: In Progress
 **Created:** 2026-03-30
 **Last Updated:** 2026-03-30
 
@@ -64,7 +64,61 @@
 <!-- Sections below are added by subsequent skills -->
 
 ## Tech Design (Solution Architect)
-_To be added by /architecture_
+
+### Key Discovery: Infrastructure Already Exists
+The backend already has a `system_settings` table (key-value, PostgreSQL), a `SystemSettingsController` at `/admin/settings`, and a `SystemSettingsService` with `seedDefaults()`. No new table needed.
+
+### Component Structure
+```
+Admin Section
++-- /admin/colors (new page, admin-only)
+    +-- ColorConfigSection ("Ticket-Status")
+    |   +-- StatusColorRow (×5: open, in_progress, resolved, closed, on_hold)
+    |       +-- ColorPalette (10 clickable swatches)
+    |       +-- BadgePreview (live-updated)
+    +-- ColorConfigSection ("Ticket-Priorität")
+    |   +-- PriorityColorRow (×4: low, medium, high, critical)
+    +-- ActionBar (ResetButton + SaveButton)
+
+Existing ticket pages: Badge uses dynamic color from context
+```
+
+### Data Model
+Colors stored in existing `system_settings` table as key-value pairs:
+- Keys: `ticket_status_color_{status}` and `ticket_priority_color_{priority}`
+- Values: Tailwind color token names (e.g. `"green"`, `"red"`) — not hex codes
+- 9 entries total (5 status + 4 priority)
+- Seeded as defaults in `SystemSettingsService.seedDefaults()`
+
+### API Design
+| Method | Endpoint | Access | Purpose |
+|---|---|---|---|
+| `GET` | `/color-settings` | All authenticated users | Read the 9 color token values |
+| `PUT` | `/admin/settings/ticket_*_color_*` | Admin only | Update one color (existing endpoint) |
+
+A new `GET /color-settings` endpoint is added (accessible to all auth users) because technicians need colors to render ticket badges, but the existing `/admin/settings` is admin-only.
+
+### Tailwind Dynamic Classes Strategy
+Tailwind purges unused classes at build time — runtime class composition like `bg-${color}-100` doesn't work. Solution: a static lookup table (`src/lib/ticket-colors.ts`) maps every allowed token name to its full Tailwind class string. The DB stores the token name; the frontend looks up the full class. All 11 color variations are statically present in the bundle.
+
+### Color Loading
+A React Context/Hook (`useColorSettings`) loads colors once at app startup (in the auth layout). Falls back to hardcoded defaults if the API fails. Avoids redundant API calls across pages.
+
+### Color Palette (11 tokens)
+`gray`, `slate`, `red`, `orange`, `yellow`, `green`, `teal`, `blue`, `indigo`, `purple`, `pink`
+
+### Files to Create / Modify
+| File | Action |
+|---|---|
+| `src/lib/ticket-colors.ts` | **New** — static color lookup table + default color map |
+| `src/hooks/useColorSettings.ts` | **New** — fetches colors, returns dynamic color maps |
+| `src/app/(protected)/admin/colors/page.tsx` | **New** — admin color configuration UI |
+| `src/lib/tickets.ts` | **Modify** — `STATUS_COLORS`/`PRIORITY_COLORS` become dynamic |
+| `backend/.../system-settings.service.ts` | **Modify** — add 9 color defaults to `DEFAULT_SETTINGS` |
+| `backend/.../system-settings.controller.ts` | **Modify** — add `GET /color-settings` for all auth users |
+
+### Dependencies
+No new npm packages — uses existing shadcn/ui Badge, React Context, and `api.ts`.
 
 ## QA Test Results
 _To be added by /qa_
